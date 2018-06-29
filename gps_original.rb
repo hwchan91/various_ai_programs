@@ -20,6 +20,7 @@ class Gps
     @all_ops       = opt[:all_ops]
     @steps         = []
     @steps_history  = {}
+    @level = 0
   end
 
   def solve
@@ -50,10 +51,13 @@ class Gps
   end
 
   def get_snapshot
+    @level += 1
     [@current_state.dup, @steps.dup, deep_copy(@steps_history)]
   end
 
   def backtrack(temp)
+    p "#{' ' * @level}Backtrack"
+    @level -= 1
     @current_state = temp[0]
     @steps         = temp[1]
     @steps_history = temp[2]
@@ -69,16 +73,20 @@ class Gps
         op: op,
         precons_achieved_avg: get_precons_achieved_avg(new_state_after_execution),
         goals_achieved_count: (@goals - (@goals - new_state_after_execution)).size,
+        infinite_loop: infinite_loop?(new_state_after_execution),
         state_changed: state_changed?(new_state_after_execution)
       }
     end
 
-    ops_with_ranking.select!{ |h| h[:state_changed] }
+    ops_with_ranking.select!{| h| h[:state_changed] }
+    ops_with_ranking.reject!{ |h| h[:infinite_loop] }
     ops_with_ranking.sort_by!{ |h| [h[:goals_achieved_count], h[:precons_achieved_avg]] }.reverse! # precons_avg takes precedence before goals count (due to reverse)
-    ops_with_ranking.reject!{ |h| h[:precons_achieved_avg] < curr_precons_achieved_avg }
+    # binding.pry
     return [] if ops_with_ranking.empty?
-    ops_with_ranking.map!{ |h| h[:op] }.reject!{ |op| infinite_loop?(op) }
+    ops_with_ranking.map!{ |h| h[:op] }
 
+    # p"ranked"
+    # binding.pry
     ops_with_ranking
   end
 
@@ -126,9 +134,10 @@ class Gps
 
   def apply(op)
     return unless op.is_a? Op
-    @current_state = (@current_state - op.del_list + op.add_list).uniq
-    @steps << "Execute #{op.action}"
     update_steps_history(op)
+    @current_state = (@current_state - op.del_list + op.add_list).uniq
+    p "#{' ' * @level}Execute #{op.action}"
+    @steps << "Execute #{op.action}"
   end
 
   def update_steps_history(op)
@@ -140,12 +149,15 @@ class Gps
   end
 
   def current_state_as_key
-    @current_state.sort.join(", ")
+    state_as_key(@current_state)
   end
 
-  def infinite_loop?(op)
-    return unless steps_taken = @steps_history[current_state_as_key]
-    steps_taken.find{ |step| step == op.action }
+  def state_as_key(state)
+    state.sort.join(", ")
+  end
+
+  def infinite_loop?(state)
+    @steps_history[state_as_key(state)]
   end
 
   def state_changed?(state)
@@ -338,3 +350,76 @@ Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'
 # the following works (although not optimally)
 Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['b on c','a on b'], all_ops: make_block_ops(['a', 'b', 'c'])).solve
 # solution: automatically mix up goal seq => works for both now
+
+
+def make_hanoi_ops(blocks)
+  ops = []
+
+  ['rod1', 'rod2', 'rod3'].permutation(2).to_a.each do |prev_rod, new_rod|
+    blocks.permutation(3).to_a.each do |a, b, c|
+      ops << make_hanoi_op(a, b, c, prev_rod, new_rod)
+    end
+
+    blocks.permutation(2).to_a.each do |a, b|
+      ops << make_hanoi_op(a, 'base', b, prev_rod, new_rod)
+      ops << make_hanoi_op(a, b, 'base', prev_rod, new_rod)
+    end
+
+    blocks.each do |a|
+      ops << make_hanoi_op(a, 'base', 'base', prev_rod, new_rod)
+    end
+  end
+
+  ops
+end
+
+def make_hanoi_op(block, prev_loc, new_loc, prev_rod, new_rod)
+  Op.new({
+    action: "move #{block}-#{prev_rod} from #{prev_loc}-#{prev_rod} to #{new_loc}-#{new_rod}",
+    preconds: hanoi_preconds(block, prev_loc, new_loc, prev_rod, new_rod),
+    add_list: hanoi_move_on(block, prev_loc, new_loc, prev_rod, new_rod),
+    del_list: hanoi_move_on(block, new_loc, prev_loc, new_rod, prev_rod)
+  })
+end
+
+def hanoi_preconds(block, prev_loc, new_loc, prev_rod, new_rod)
+  arr = ["space on #{block}", "#{block} at #{prev_rod}"]
+
+  if prev_loc == 'base'
+    arr += ["#{block} on base-#{prev_rod}"]
+  else
+    arr += ["#{block} on #{prev_loc}", "#{prev_loc} at #{prev_rod}"]
+  end
+
+  if new_loc == 'base'
+    arr += ["space on base-#{new_rod}"]
+  else
+    arr += ["space on #{new_loc}", "#{new_loc} at #{new_rod}"]
+  end
+
+  arr
+end
+
+def hanoi_move_on(block, prev_loc, new_loc, prev_rod, new_rod)
+  arr = ["#{block} at #{new_rod}"]
+
+  if new_loc == 'base'
+    arr += ["#{block} on base-#{new_rod}"]
+  else
+    arr += ["#{block} on #{new_loc}"]
+  end
+
+  if prev_loc == 'base'
+    arr += ["space on base-#{prev_rod}"]
+  else
+    arr += ["space on #{prev_loc}"]
+  end
+end
+
+
+Gps.new(state: ['space on a', 'a on b', 'b on base-rod1', 'a at rod1', 'b at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'a at rod3', 'b at rod3'], all_ops: make_hanoi_ops(['a', 'b'])).solve
+
+Gps.new(state: ['space on a', 'a on b', 'b on c', 'c on base-rod1', 'a at rod1', 'b at rod1', 'c at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'b on c', 'a at rod3', 'b at rod3', 'c at rod3'], all_ops: make_hanoi_ops(['a', 'b', 'c'])).solve
+
+
+
