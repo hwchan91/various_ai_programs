@@ -19,6 +19,7 @@ class Gps
     @goals         = opt[:goals]
     @all_ops       = opt[:all_ops]
     @steps         = []
+    @steps_history  = {}
   end
 
   def solve
@@ -49,12 +50,13 @@ class Gps
   end
 
   def get_snapshot
-    [@current_state.dup, @steps.dup]
+    [@current_state.dup, @steps.dup, deep_copy(@steps_history)]
   end
 
   def backtrack(temp)
     @current_state = temp[0]
-    @steps = temp[1]
+    @steps         = temp[1]
+    @steps_history = temp[2]
   end
 
   def executable_ops
@@ -62,16 +64,22 @@ class Gps
     ops = immediately_executable_ops
 
     ops_with_ranking = ops.map do |op|
-      new_state_after_execution = @current_state + op.add_list - op.del_list
+      new_state_after_execution = (@current_state + op.add_list - op.del_list).uniq
       {
         op: op,
         precons_achieved_avg: get_precons_achieved_avg(new_state_after_execution),
-        goals_achieved_count: (@goals - (@goals - new_state_after_execution)).size
+        goals_achieved_count: (@goals - (@goals - new_state_after_execution)).size,
+        state_changed: state_changed?(new_state_after_execution)
       }
     end
 
+    ops_with_ranking.select!{ |h| h[:state_changed] }
     ops_with_ranking.sort_by!{ |h| [h[:goals_achieved_count], h[:precons_achieved_avg]] }.reverse! # precons_avg takes precedence before goals count (due to reverse)
-    ops_with_ranking.reject{ |h| h[:precons_achieved_avg] < curr_precons_achieved_avg }.map{ |h| h[:op] }
+    ops_with_ranking.reject!{ |h| h[:precons_achieved_avg] < curr_precons_achieved_avg }
+    return [] if ops_with_ranking.empty?
+    ops_with_ranking.map!{ |h| h[:op] }.reject!{ |op| infinite_loop?(op) }
+
+    ops_with_ranking
   end
 
   def immediately_executable_ops
@@ -90,9 +98,12 @@ class Gps
 
   def precons_percentage_achieved_per_goal(state)
     common_precons_of_remaining_goals(state).map do |common_precons|
-      return 1 if common_precons.empty?
-      common_precons_achieved = common_precons - (common_precons - state)
-      common_precons_achieved.size / common_precons.size.to_f
+      if common_precons.empty?
+        1
+      else
+        common_precons_achieved = common_precons - (common_precons - state)
+        common_precons_achieved.size / common_precons.size.to_f
+      end
     end
   end
 
@@ -106,7 +117,7 @@ class Gps
     @common_precons_of_ultimate_goals ||= @goals.map do |goal|
       ops_one_move_away = all_ops.select{ |op| op.add_list.include?(goal) }
       common_precons = ops_one_move_away.map{ |op| op.preconds }.inject(:&)
-    end
+    end.map{ |arr| arr.nil? ? [] : arr }
   end
 
   def destroy_achieved_goals?(op, achieved_goals)
@@ -115,15 +126,41 @@ class Gps
 
   def apply(op)
     return unless op.is_a? Op
-    @current_state = @current_state - op.del_list + op.add_list
-    p "Execute #{op.action}"
+    @current_state = (@current_state - op.del_list + op.add_list).uniq
     @steps << "Execute #{op.action}"
+    update_steps_history(op)
+  end
+
+  def update_steps_history(op)
+    if @steps_history[current_state_as_key]
+      @steps_history[current_state_as_key] << op.action
+    else
+      @steps_history[current_state_as_key] = [op.action]
+    end
+  end
+
+  def current_state_as_key
+    @current_state.sort.join(", ")
+  end
+
+  def infinite_loop?(op)
+    return unless steps_taken = @steps_history[current_state_as_key]
+    steps_taken.find{ |step| step == op.action }
+  end
+
+  def state_changed?(state)
+    state.sort != @current_state.sort
   end
 
   def all_goals_achieved?(goals)
     (goals - @current_state).empty?
   end
+
+  def deep_copy(o)
+    Marshal.load(Marshal.dump(o))
+  end
 end
+
 
 
 school_ops = [
@@ -155,7 +192,7 @@ school_ops = [
   }),
   Op.new({
     action: 'give shop money',
-    preconds: ['have money'],
+    preconds: ['have money', 'shop knows problem'],
     add_list: ['shop has money'],
     del_list: ['have money']
   })
