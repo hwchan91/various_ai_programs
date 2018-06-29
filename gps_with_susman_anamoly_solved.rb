@@ -51,6 +51,7 @@ class Gps
     remaining_goals = goals - [goal]
     achieved_goals = get_achieved_goals(goals, achieved_goals)
 
+    # p "find #{goal} - #{goals} - #{goal_stack}"
     ops_matching_goal(goal, achieved_goals).find do |op|
       temp = get_snapshot
       next unless achieve_all(goals: op.preconds, goal_stack: new_goal_stack, achieved_goals: achieved_goals)
@@ -85,7 +86,8 @@ class Gps
 
   def apply(op)
     return unless op.is_a? Op
-    @current_state = @current_state - op.del_list + op.add_list
+    @current_state = (@current_state - op.del_list + op.add_list).uniq
+    # p "Execute #{op.action}"
     @steps << "Execute #{op.action}"
   end
 
@@ -270,3 +272,4 @@ Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'
 # the following works (although not optimally)
 Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['b on c','a on b'], all_ops: make_block_ops(['a', 'b', 'c'])).solve
 # solution: automatically mix up goal seq => works for both now
+Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['a on b', 'b on c', 'c on table'], all_ops: make_block_ops(['a', 'b', 'c'])).solve

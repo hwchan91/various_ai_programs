@@ -56,7 +56,7 @@ class Gps
   end
 
   def backtrack(temp)
-    p "#{' ' * @level}Backtrack"
+    # p "#{' ' * @level}Backtrack"
     @level -= 1
     @current_state = temp[0]
     @steps         = temp[1]
@@ -136,7 +136,7 @@ class Gps
     return unless op.is_a? Op
     update_steps_history(op)
     @current_state = (@current_state - op.del_list + op.add_list).uniq
-    p "#{' ' * @level}Execute #{op.action}"
+    # p "#{' ' * @level}Execute #{op.action}"
     @steps << "Execute #{op.action}"
   end
 
@@ -435,5 +435,6 @@ end
 
 Gps.new(state: ['space on a-rod1', 'a-rod1 on b-rod1', 'b-rod1 on base-rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a-rod3 on b-rod3'], all_ops: make_hanoi_ops(['a', 'b'])).solve
 
+Gps.new(state: ['space on a-rod1', 'a-rod1 on b-rod1', 'b-rod1 on c-rod1', 'c-rod1 on base-rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a-rod3 on b-rod3', 'b-rod3 on c-rod3', 'c-rod3 on base-rod3'], all_ops: make_hanoi_ops(['a', 'b', 'c'])).solve
 
-
+# To make program optimal: Bidrectional Djkistra Algorithm
