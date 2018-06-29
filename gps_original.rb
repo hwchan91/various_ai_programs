@@ -382,44 +382,58 @@ def make_hanoi_op(block, prev_loc, new_loc, prev_rod, new_rod)
   })
 end
 
+# def hanoi_preconds(block, prev_loc, new_loc, prev_rod, new_rod)
+#   arr = ["space on #{block}", "#{block} at #{prev_rod}"]
+
+#   if prev_loc == 'base'
+#     arr += ["#{block} on base-#{prev_rod}"]
+#   else
+#     arr += ["#{block} on #{prev_loc}", "#{prev_loc} at #{prev_rod}"]
+#   end
+
+#   if new_loc == 'base'
+#     arr += ["space on base-#{new_rod}"]
+#   else
+#     arr += ["space on #{new_loc}", "#{new_loc} at #{new_rod}"]
+#   end
+
+#   arr
+# end
+
+# def hanoi_move_on(block, prev_loc, new_loc, prev_rod, new_rod)
+#   arr = ["#{block} at #{new_rod}"]
+
+#   if new_loc == 'base'
+#     arr += ["#{block} on base-#{new_rod}"]
+#   else
+#     arr += ["#{block} on #{new_loc}"]
+#   end
+
+#   if prev_loc == 'base'
+#     arr += ["space on base-#{prev_rod}"]
+#   else
+#     arr += ["space on #{prev_loc}"]
+#   end
+# end
+
+
+# Gps.new(state: ['space on a', 'a on b', 'b on base-rod1', 'a at rod1', 'b at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'a at rod3', 'b at rod3'], all_ops: make_hanoi_ops(['a', 'b'])).solve
+
+# Gps.new(state: ['space on a', 'a on b', 'b on c', 'c on base-rod1', 'a at rod1', 'b at rod1', 'c at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'b on c', 'a at rod3', 'b at rod3', 'c at rod3'], all_ops: make_hanoi_ops(['a', 'b', 'c'])).solve
+
+
+
 def hanoi_preconds(block, prev_loc, new_loc, prev_rod, new_rod)
-  arr = ["space on #{block}", "#{block} at #{prev_rod}"]
-
-  if prev_loc == 'base'
-    arr += ["#{block} on base-#{prev_rod}"]
-  else
-    arr += ["#{block} on #{prev_loc}", "#{prev_loc} at #{prev_rod}"]
-  end
-
-  if new_loc == 'base'
-    arr += ["space on base-#{new_rod}"]
-  else
-    arr += ["space on #{new_loc}", "#{new_loc} at #{new_rod}"]
-  end
-
-  arr
+  ["space on #{block}-#{prev_rod}", "#{block}-#{prev_rod} on #{prev_loc}-#{prev_rod}", "space on #{new_loc}-#{new_rod}"]
 end
 
 def hanoi_move_on(block, prev_loc, new_loc, prev_rod, new_rod)
-  arr = ["#{block} at #{new_rod}"]
-
-  if new_loc == 'base'
-    arr += ["#{block} on base-#{new_rod}"]
-  else
-    arr += ["#{block} on #{new_loc}"]
-  end
-
-  if prev_loc == 'base'
-    arr += ["space on base-#{prev_rod}"]
-  else
-    arr += ["space on #{prev_loc}"]
-  end
+  ["#{block}-#{new_rod} on #{new_loc}-#{new_rod}", "space on #{prev_loc}-#{prev_rod}", "space on #{block}-#{new_rod}"]
 end
 
 
-Gps.new(state: ['space on a', 'a on b', 'b on base-rod1', 'a at rod1', 'b at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'a at rod3', 'b at rod3'], all_ops: make_hanoi_ops(['a', 'b'])).solve
 
-Gps.new(state: ['space on a', 'a on b', 'b on c', 'c on base-rod1', 'a at rod1', 'b at rod1', 'c at rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a on b', 'b on c', 'a at rod3', 'b at rod3', 'c at rod3'], all_ops: make_hanoi_ops(['a', 'b', 'c'])).solve
+Gps.new(state: ['space on a-rod1', 'a-rod1 on b-rod1', 'b-rod1 on base-rod1', 'space on base-rod2', 'space on base-rod3'], goals:['a-rod3 on b-rod3'], all_ops: make_hanoi_ops(['a', 'b'])).solve
 
 
 
