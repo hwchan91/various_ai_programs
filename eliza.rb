@@ -17,7 +17,7 @@ class PatternChecker
   end
 
   def pattern_to_regex
-    regex_string = @pattern.gsub(/\s?\?\w+\s?/, '(.*)').gsub(' ', '\s')
+    regex_string = @pattern.sub(/\s?\?\w+\s?/, '(.*)').gsub(/\s?\?\w+\s?/, '($|\s.*)').gsub(' ', '\s') # beyond the first variable, all variables needs to be preceded by a space
     regex = Regexp.new(regex_string, "i")
   end
 
@@ -26,22 +26,21 @@ class PatternChecker
   end
 
   def find_values
-    test_string, rest_of_string = @string, ""
+    indices_of_spaces = (0...@string.length).find_all { |i| @string[i] == ' ' } + [@string.length-1]
 
-    loop do
-      values = test_string.scan(@regex).first
-      break unless values
+    indices_of_spaces.each do |index|
+      values = @string[0..index].scan(@regex).first
+      next unless values
 
+      values[-1] += @string[index+1..-1]
       values.map!{ |val| val.strip }
-      values[-1] += rest_of_string
-      break if @possible_values.include?(values)
+      next if @possible_values.include?(values)
 
       @possible_values << values
-      trim_index = string.index(Regexp.new("#{rest_of_string}$"))
-      test_string, rest_of_string = string[0...trim_index], string[trim_index..-1]
     end
+
     return unless @possible_values.any?
-    @possible_values.reverse!
+    @possible_values
   end
 
   def get_variable_map
@@ -55,7 +54,7 @@ class PatternChecker
 end
 
 # pattern = "?X hello ?Y"
-# string = "hello"
+# string = "hello to you"
 
 # PatternChecker.new(pattern: pattern,string: string).solve
 
@@ -96,16 +95,7 @@ class Eliza
     end
 
     def transform(input)
-      input.downcase.scan(/\??[\w|']+,?/).map do |word|
-        case word
-        when 'no', 'no,'
-          'nonono'
-        when 'hi', 'hi,'
-          'hello'
-        else
-          word
-        end
-      end.join(" ").gsub("i am", "I'm").gsub("cannot", "can't").gsub("do not", "don't")
+      input.downcase.gsub(",", "").gsub(".", "").gsub("i am", "I'm").gsub("cannot", "can't").gsub("do not", "don't")
     end
 
     def generate_response(input)
@@ -285,7 +275,7 @@ class Eliza
       responses: ["You seem quite positive", "You seem sure", "I understand"]
     },
     {
-      pattern: "?X nonono ?Y",
+      pattern: "?X no ?Y",
       responses: ["Why not?", "You are being a bit negative", "Are you saying NO just to be negative?"]
     },
     {
