@@ -97,17 +97,29 @@ class Eliza
 
     def transform(input)
       input.downcase.scan(/\??[\w|']+,?/).map do |word|
-        ['no', 'no,'].include?(word) ? 'nonono': word
+        case word
+        when 'no', 'no,'
+          'nonono'
+        when 'hi', 'hi,'
+          'hello'
+        else
+          word
+        end
       end.join(" ").gsub("i am", "I'm").gsub("cannot", "can't").gsub("do not", "don't")
     end
 
     def generate_response(input)
       variable_map, response = nil, nil
       rule = eliza_rules.find do |rule|
-        variable_map = PatternChecker.new(pattern: rule[:pattern], string: input).solve
+        if rule[:pattern].is_a?(Array)
+          rule[:pattern].find do |pattern|
+            variable_map = PatternChecker.new(pattern: pattern, string: input).solve
+          end
+        else
+          variable_map = PatternChecker.new(pattern: rule[:pattern], string: input).solve
+        end
       end
 
-      return "Sorry, I don't understand you" unless rule
       response = rule[:responses].sample.dup
       variable_map.map!{ |variable, value| [variable, switch_viewpoint(value)] }
       variable_map.each do |variable, value|
@@ -137,12 +149,16 @@ class Eliza
 
   @eliza_rules = [
     {
-      pattern: "?X hello ?Y",
+      pattern: ["?X fuck ?Y", "?X shit ?Y", "?X cunt ?Y"],
+      responses: ["You seem angry", "Words cannot hurt me","What have I done to make you use such language?", "Same to you", "What made you behave so childishly?"]
+    },
+    {
+      pattern: ["?X hello ?Y", "?X hi ?Y"],
       responses: ["How do you do. Please state your problem."]
     },
     {
       pattern: "?X computer ?Y",
-      responses: ["Do computer worry you?", "What do you think about machines?", "Why do you metnion computers?", "What do you think machines have to do with your problem?"]
+      responses: ["Do computer worry you?", "What do you think about machines?", "Why do you mention computers?", "What do you think machines have to do with your problem?"]
     },
     {
       pattern: "?X name ?Y",
@@ -217,7 +233,7 @@ class Eliza
       responses: ["What if you were ?Y?", "Do you think you were ?Y?", "What would it mean if you were ?Y?"]
     },
     {
-      pattern: "?X I am ?Y",
+      pattern: "?X I'm ?Y",
       responses: ["In what way are you ?Y?", "Do you want to be ?Y?"]
     },
     {
