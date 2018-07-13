@@ -4,15 +4,15 @@ class PatternMatcher
   attr_accessor :pattern, :string
 
   SINGLE_PATTERNS = {
-    '?|' => 'match-or',  # ?|=[1,2,3]
-    '?=' => 'match-is',  # ?=[?N, :is_a?, Numeric], ?=[?N, :odd?]
-    '?&' => 'match-and', # ?&[ ?=[?N, :is_a?, Numeric], ?=[?N, :odd?] ]
-    '?!' => 'match-not', # ?!(?X)
+    '?|' => 'match_or',  # ?|=[1,2,3]
+    '?=' => 'match_is',  # ?=[?N, :is_a?, Numeric], ?=[?N, :odd?]
+    '?&' => 'match_and', # ?&[ ?=[?N, :is_a?, Numeric], ?=[?N, :odd?] ]
+    '?!' => 'match_not', # ?!(?X)
   }
   SEGMENT_PATTERNS = {
-    '?*' => 'segment-match', # ?*(?X)
-    '?+' => 'segment-match-one-plus', # ?+(?X)
-    '??' => 'segment-match-zero-or-one' # ??(?X)
+    '?*' => 'segment_match', # ?*(?X)
+    '?+' => 'segment_match_one_plus', # ?+(?X)
+    '??' => 'segment_match_zero_or_one' # ??(?X)
   }
 
   def initialize(opt = {})
@@ -36,7 +36,7 @@ class PatternMatcher
     #   return unless bindings = single_matcher(sym, string_arr.shift, bindings)
     #   pattern_matcher(pattern_arr, string_arr, bindings)
     elsif segment_pattern(sym)
-      return segment_matcher(sym, pattern_arr[1..-1], string_arr, bindings)
+      return send(segment_pattern(sym), sym, pattern_arr[1..-1], string_arr, bindings)
     else
       return fail unless sym == first_of_string(string_arr)
     end
@@ -57,7 +57,6 @@ class PatternMatcher
     input = input.join(" ") if input.is_a? Array
     return fail if bindings[var] && bindings[var] != input
     bindings[var] = input
-    puts bindings
     bindings
   end
 
@@ -77,24 +76,39 @@ class PatternMatcher
     sym[3..-2]
   end
 
-  def segment_matcher(sym, pattern_arr, string_arr, bindings)
+  def segment_match(sym, pattern_arr, string_arr, bindings, min_words: 0, max_words: nil)
     var = get_var_from_sym(sym)
     return update_bindings(var, string_arr, bindings) if pattern_arr.nil? || pattern_arr.empty?
 
-    indices = string_arr.each_index.select{ |i| string_arr[i] == pattern_arr.first }
-    return fail unless indices.any?
-
     result_bindings = {}
-    index = indices.find do |index|
-      next unless new_bindings = update_bindings(var, string_arr[0..index-1], bindings)
-      result_bindings = pattern_matcher(pattern_arr, string_arr[index..-1], new_bindings)
+    index = ((min_words - 1) ... [string_arr.length, max_words].compact.min ).find do |index|
+      next unless new_bindings = update_bindings(var, get_subarray(string_arr, index), bindings)
+      result_bindings = pattern_matcher(pattern_arr, string_arr[index+1..-1], new_bindings)
     end
     return fail unless index
     result_bindings
+  end
+
+  def get_subarray(string_arr, index)
+    index < 0 ? [] : string_arr[0..index]
+  end
+
+  def segment_match_one_plus(sym, pattern_arr, string_arr, bindings)
+    segment_match(sym, pattern_arr, string_arr, bindings, min_words: 1)
+  end
+
+  def segment_match_zero_or_one(sym, pattern_arr, string_arr, bindings)
+    segment_match(sym, pattern_arr, string_arr, bindings, max_words: 1)
   end
 end
 
 pattern = "?*(?X) is ?*(?Y) is ?*(?X) is ?*(?Z)"
 string = "B is C is D is B is C is E"
+
+pattern = "?*(?X) is ?*(?Y) is ?*(?X)"
+string = "B is C is D is B is C"
+
+pattern = "A ?+(?X) ??(Y) ?*(?Z) ??(Y) ?+(?X) D"
+string = "A B C E F E F B C D"
 
 PatternMatcher.new(pattern: pattern, string: string).solve
