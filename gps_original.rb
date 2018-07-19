@@ -1,3 +1,5 @@
+# version created by myself that find actionable ops forwardedly, instead of going many levels deep wokring backwards
+
 require 'pry'
 
 class Op

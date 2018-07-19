@@ -16,8 +16,13 @@ class PatternMatcher
   }
 
   def initialize(opt = {})
-    @pattern_arr         = opt[:pattern].scan(/\S+/)
-    @string_arr          = opt[:string].scan(/\S+/)
+    @pattern_arr = format_as_array(opt[:pattern])
+    @string_arr  = format_as_array(opt[:string])
+  end
+
+  def format_as_array(words)
+    return words if words.is_a?(Array)
+    words.scan(/\S+/)
   end
 
   def solve
@@ -170,30 +175,31 @@ class PatternMatcher
   end
 end
 
-pattern = "?*(?X) is ?*(?Y) is ?*(?X) is ?*(?Z)"
-string = "B is C is D is B is C is E"
-PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "?*(?X) is ?*(?Y) is ?*(?X)"
-string = "B is C is D is B is C"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "?*(?X) is ?*(?Y) is ?*(?X) is ?*(?Z)"
+# string = "B is C is D is B is C is E"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "A ?+(?X) ??(Y) ?*(?Z) ??(Y) ?+(?X) D"
-string = "A B C E F E F B C D"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "?*(?X) is ?*(?Y) is ?*(?X)"
+# string = "B is C is D is B is C"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "A ?=[?B,is_i?(value)]"
-string = "A 12"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "A ?+(?X) ??(Y) ?*(?Z) ??(Y) ?+(?X) D"
+# string = "A B C E F E F B C D"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "?X ?|[<,=,>] ?Y"
-string = "3 < 4"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "A ?=[?B,is_i?(value)]"
+# string = "A 12"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "?X =/= ?![<,=,?X]"
-string = "3 =/= 4"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "?X ?|[<,=,>] ?Y"
+# string = "3 < 4"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = "A ?&[?=[?B,is_i?(value)],?|[?=[?B,value.to_i<5],?=[?B,value.to_i>20]]]"
-string = "A 35"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = "?X =/= ?![<,=,?X]"
+# string = "3 =/= 4"
+# PatternMatcher.new(pattern: pattern, string: string).solve
+
+# pattern = "A ?&[?=[?B,is_i?(value)],?|[?=[?B,value.to_i<5],?=[?B,value.to_i>20]]]"
+# string = "A 35"
+# PatternMatcher.new(pattern: pattern, string: string).solve
