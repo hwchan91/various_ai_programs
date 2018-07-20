@@ -30,7 +30,7 @@ class PatternMatcher
   end
 
   def multiple_word_matcher(pattern_arr, string_arr, bindings = {})
-    return bindings if pattern_arr.nil? || pattern_arr.empty?
+    return bindings if (pattern_arr.nil? || pattern_arr.empty?) && (string_arr.nil? || string_arr.empty?)
     return fail if bindings == fail
 
     if segment_pattern(pattern_arr.first)
@@ -71,14 +71,17 @@ class PatternMatcher
   end
 
   def is_variable?(sym)
+    return unless sym
     sym[/^\?[a-zA-Z]+$/]
   end
 
   def single_pattern(sym)
+    return unless sym
     SINGLE_PATTERNS[sym[0..1]]
   end
 
   def segment_pattern(sym)
+    return unless sym
     SEGMENT_PATTERNS[sym[0..1]]
   end
 
@@ -202,4 +205,8 @@ end
 
 # pattern = "A ?&[?=[?B,is_i?(value)],?|[?=[?B,value.to_i<5],?=[?B,value.to_i>20]]]"
 # string = "A 35"
+# PatternMatcher.new(pattern: pattern, string: string).solve
+
+# pattern = "?*(?X) B C"
+# string = "A B C D"
 # PatternMatcher.new(pattern: pattern, string: string).solve
