@@ -68,21 +68,18 @@ class PatternMatcher
   end
 
   def single_pattern(sym)
-    sym && sym.class != Array && SINGLE_PATTERNS[sym[0..1]]
+    sym && sym.class == Array && SINGLE_PATTERNS[sym.first]
   end
 
   def segment_pattern(pattern)
     return unless pattern.class == Array
     sym = pattern.first
-    sym && SEGMENT_PATTERNS[sym[0..1]]
-  end
-
-  def get_var_from_segment_sym(sym)
-    sym[3..-2]
+    sym && sym.class == Array && SEGMENT_PATTERNS[sym.first]
   end
 
   def segment_match(pattern_arr, string_arr, bindings, min_words: 0, max_words: nil)
-    var = get_var_from_segment_sym(pattern_arr.shift)
+    pattern_arr = pattern_arr.dup
+    var = pattern_arr.shift.last
     return update_bindings(var, string_arr, bindings) if pattern_arr.empty?
 
     result_bindings = {}
@@ -106,19 +103,14 @@ class PatternMatcher
     segment_match(pattern_arr, string_arr, bindings, max_words: 1)
   end
 
-  def get_arr_from_sym(sym)
-    split_outer_commas(get_var_from_segment_sym(sym))
-  end
-
   def match_is(pattern, value, bindings)
-    arr = get_arr_from_sym(pattern)
-    var, cond = arr.first, arr.last
+    _, var, cond = pattern[0], pattern[1], pattern[2]
     return fail unless eval(cond)
     update_bindings(var, value, bindings)
   end
 
   def match_or(pattern, string, bindings)
-    options = get_arr_from_sym(pattern)
+    _, options = pattern[0], pattern[1]
     new_bindings = {}
     options.find do |pattern|
       new_bindings = pattern_matcher(pattern, string, bindings)
@@ -127,7 +119,7 @@ class PatternMatcher
   end
 
   def match_and(pattern, string, bindings)
-    options = get_arr_from_sym(pattern)
+    _, options = pattern[0], pattern[1]
     new_bindings = {}
     options.all? do |pattern|
       new_bindings = pattern_matcher(pattern, string, bindings)
@@ -136,7 +128,7 @@ class PatternMatcher
   end
 
   def match_not(pattern, string, bindings)
-    reject_options = get_arr_from_sym(pattern).map{ |val| get_value(val, bindings) }
+    _, reject_options = pattern[0], pattern[1].map{ |val| get_value(val, bindings) }
     return fail if reject_options.include?(string)
     bindings
   end
@@ -146,64 +138,42 @@ class PatternMatcher
     bindings[val]
   end
 
-  def split_outer_commas(string)
-    indexes = []
-    scoped_count = 0
-    string.split("").each_with_index do |char, index|
-      scoped_count += 1 if char == '['
-      scoped_count -= 1 if char == ']'
-      indexes << index if char == ',' && scoped_count == 0
-    end
-
-    start_indexes = [0] + indexes.map{|i| i+1}
-    end_indexes = indexes.map{|i| i-1} + [-1]
-    index_pairs = start_indexes.zip(end_indexes)
-    arr = []
-    index_pairs.each do |start_index, end_index|
-      arr << string[start_index..end_index]
-    end
-    arr
-  end
-
   def is_i?(value)
+    return true if value.is_a?(Numeric)
     value =~ /\A[-+]?[0-9]+\z/
   end
 end
 
 
-# pattern = "?*(?X) is ?*(?Y) is ?*(?X) is ?*(?Z)"
-# string = "B is C is D is B is C is E"
-# PatternMatcher.new(pattern: pattern, string: string).solve
-
 # pattern = [ %w(?* ?X), 'is', %w(?* ?Y), 'is', %w(?* ?X), 'is', %w(?* ?Z) ]
 # string = %w(B is C is D is B is C is E)
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "?*(?X) is ?*(?Y) is ?*(?X)"
-# string = "B is C is D is B is C"
+# pattern =  [ %w(?* ?X), 'is', %w(?* ?Y), 'is', %w(?* ?X) ]
+# string = %w(B is C is D is B is C)
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "A ?+(?X) ??(Y) ?*(?Z) ??(Y) ?+(?X) D"
-# string = "A B C E F E F B C D"
+# pattern = ["A",  %w(?+ ?X), %w(?? ?Y), %w(?* ?Z), %w(?? ?Y), %w(?+ ?X), "D" ]
+# string = %w(A B C E F E F B C D)
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "A ?=[?B,is_i?(value)]"
-# string = "A 12"
+# pattern = ["A", %w(?= ?B is_i?(value))]
+# string = ["A", 12]
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "?X ?|[<,=,>] ?Y"
+# pattern = ["?X", ["?|", %w(< = >) ], "?Y"]
 # string = "3 < 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "?X =/= ?![<,=,?X]"
+# pattern = ["?X", "=/=", ["?!", %w(< = ?X)] ]
 # string = "3 =/= 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "A ?&[?=[?B,is_i?(value)],?|[?=[?B,value.to_i<5],?=[?B,value.to_i>20]]]"
+# pattern = [ "A", ["?&", [ %w(?= ?B is_i?(value)) , ["?|", [ %w(?= ?B value.to_i<5), %w(?= ?B value.to_i>20) ] ] ] ] ]
 # string = "A 35"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = "?*(?X) B C"
+# pattern = [ %w(?* ?X), "B", "C"]
 # string = "A B C D"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
