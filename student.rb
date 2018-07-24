@@ -32,7 +32,7 @@ class Student < RuleBasedTranslator
     end
 
     def make_variable(words)
-      words = format_as_array(words.dup)
+      words = words.dup
       words.first
     end
 
@@ -42,8 +42,12 @@ class Student < RuleBasedTranslator
         response
       end
 
-      translate(input: string_to_words(input), rules: student_rules, action_func: action_func) ||
+      translate(input: input, rules: student_rules, action_func: action_func) ||
       make_variable(input)
+    end
+
+    def string_translate_to_expression(input)
+      translate_to_expression(string_to_words(input))
     end
   end
 
@@ -121,56 +125,55 @@ end
 
 
 # binding.pry
-# puts Student.translate_to_expression("")
+# puts Student.string_translate_to_expression("x is 5")
 
-class EquationStandardizer
-  # assuming the equation has one and only one equal sign
-  def isolate(equation, var)
-    return unless valid_equation?(equation)
+# class EquationStandardizer
+#   # assuming the equation has one and only one equal sign
+#   def isolate(equation, var)
+#     return unless valid_equation?(equation)
 
-    lhs, rhs = equation.split("=").map{&:strip)
-    return rhs if is_var?(lhs)
-    return isolate("#{rhs} = #{lhs}") if includes_var?(rhs)
-    front_exp, op, back_exp = split_expression(lhs)
-  end
+#     lhs, rhs = equation.split("=").map(&:strip)
+#     return rhs if is_var?(lhs)
+#     return isolate("#{rhs} = #{lhs}") if includes_var?(rhs)
+#     front_exp, op, back_exp = split_expression(lhs)
+#   end
 
-  def is_var?(equation)
-    equation[/\d+/].nil?
-  end
+#   def is_var?(equation)
+#     equation[/\d+/].nil?
+#   end
 
-  def includes_var?(equation)
-    equation[/[a-zA-Z]+/]
-  end
+#   def includes_var?(equation)
+#     equation[/[a-zA-Z]+/]
+#   end
 
-  def split_expression(expression)
-    cons_product_or_divide_regex = /(\w+(\s+(\*|\/)\s+)*)+$/
-  end
+#   def split_expression(expression)
+#     cons_product_or_divide_regex = /(\w+(\s+(\*|\/)\s+)*)+$/
+#   end
 
-  def valid_equation?(equation)
-    return if equation.scan(/=/).count > 1
-    return unless equation =~ /^(\(*\s*\w+\s*\)*((\s*(\+|\-|\*|\/|\=)\s*)))+\(*\w+\)*$/
+#   # def valid_equation?(equation)
+#   #   return if equation.scan(/=/).count > 1
+#   #   return unless equation =~ /^(\(*\s*\w+\s*\)*((\s*(\+|\-|\*|\/|\=)\s*)))+\(*\w+\)*$/
 
-    # still need to account for (((equation)))
-    if equation[0] == "(" && equation[-1] == ")"
-      equation = equation[1..-2]
-    end
+#   #   # still need to account for (((equation)))
+#   #   if equation[0] == "(" && equation[-1] == ")"
+#   #     equation = equation[1..-2]
+#   #   end
 
-    expressions = equation.split("=")
-    expressions.none? do |exp|
-      invalid = false
-      parentheses = exp.scan(/\(|\)/)
-      open_parentheses_count = parentheses.select { |sym| sym == "(" }.count
-      invalid = true unless open_parentheses_count == parentheses.count / 2
+#   #   expressions = equation.split("=")
+#   #   expressions.none? do |exp|
+#   #     invalid = false
+#   #     parentheses = exp.scan(/\(|\)/)
+#   #     open_parentheses_count = parentheses.select { |sym| sym == "(" }.count
+#   #     invalid = true unless open_parentheses_count == parentheses.count / 2
 
-      level_count = 0
-      parentheses.each do |sym|
-        next if invalid
-        level_count += 1 if sym == "("
-        level_count -= 1 if sym == ")"
-        invalid = true if level_count < 0
-      end
-      invalid
-    end
-  end
-
-end
+#   #     level_count = 0
+#   #     parentheses.each do |sym|
+#   #       next if invalid
+#   #       level_count += 1 if sym == "("
+#   #       level_count -= 1 if sym == ")"
+#   #       invalid = true if level_count < 0
+#   #     end
+#   #     invalid
+#   #   end
+#   # end
+# end
