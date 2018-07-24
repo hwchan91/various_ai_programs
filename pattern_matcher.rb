@@ -26,36 +26,30 @@ class PatternMatcher
   end
 
   def solve
-    multiple_word_matcher(@pattern_arr, @string_arr)
+    pattern_matcher(@pattern_arr, @string_arr)
   end
 
-  def multiple_word_matcher(pattern_arr, string_arr, bindings = {})
-    return bindings if (pattern_arr.nil? || pattern_arr.empty?) && (string_arr.nil? || string_arr.empty?)
+  def pattern_matcher(pattern, string, bindings = {})
     return fail if bindings == fail
 
-    if segment_pattern(pattern_arr.first)
-      return send(segment_pattern(pattern_arr.first), pattern_arr, string_arr, bindings)
-    else
-      new_bindings = single_word_matcher(pattern_arr.first, first_of_string(string_arr), bindings)
-      return multiple_word_matcher(pattern_arr[1..-1], string_arr[1..-1], new_bindings)
-    end
-  end
-
-  def single_word_matcher(pattern, string, bindings)
     if is_variable?(pattern)
       return update_bindings(pattern, string, bindings)
     elsif pattern == string
       return bindings
     elsif single_pattern(pattern)
       return send(single_pattern(pattern), pattern, string, bindings)
+    elsif segment_pattern(pattern)
+      return send(segment_pattern(pattern), pattern, string, bindings)
+    elsif pattern.class == Array && string.class == Array
+      new_bindings = pattern_matcher(pattern.first, string.first, bindings)
+      pattern_matcher(rest_of_arr(pattern), rest_of_arr(string), new_bindings)
     else
       fail
     end
   end
 
-  def first_of_string(string_arr)
-    return unless string_arr
-    string_arr.first
+  def rest_of_arr(arr)
+    arr[1..-1] || []
   end
 
   def fail
@@ -64,25 +58,23 @@ class PatternMatcher
 
   def update_bindings(var, input, bindings)
     bindings = bindings.dup
-    input = input.join(" ") if input.is_a? Array
     return fail if bindings[var] && bindings[var] != input
     bindings[var] = input
     bindings
   end
 
   def is_variable?(sym)
-    return unless sym
-    sym[/^\?[a-zA-Z]+$/]
+    sym && sym.class != Array && sym[/^\?[a-zA-Z]+$/]
   end
 
   def single_pattern(sym)
-    return unless sym
-    SINGLE_PATTERNS[sym[0..1]]
+    sym && sym.class != Array && SINGLE_PATTERNS[sym[0..1]]
   end
 
-  def segment_pattern(sym)
-    return unless sym
-    SEGMENT_PATTERNS[sym[0..1]]
+  def segment_pattern(pattern)
+    return unless pattern.class == Array
+    sym = pattern.first
+    sym && SEGMENT_PATTERNS[sym[0..1]]
   end
 
   def get_var_from_segment_sym(sym)
@@ -91,12 +83,12 @@ class PatternMatcher
 
   def segment_match(pattern_arr, string_arr, bindings, min_words: 0, max_words: nil)
     var = get_var_from_segment_sym(pattern_arr.shift)
-    return update_bindings(var, string_arr, bindings) if pattern_arr.nil? || pattern_arr.empty?
+    return update_bindings(var, string_arr, bindings) if pattern_arr.empty?
 
     result_bindings = {}
     index = ((min_words - 1) ... [string_arr.length, max_words].compact.min ).find do |index|
       next unless new_bindings = update_bindings(var, get_subarray(string_arr, index), bindings)
-      result_bindings = multiple_word_matcher(pattern_arr, string_arr[index+1..-1], new_bindings)
+      result_bindings = pattern_matcher(pattern_arr, string_arr[index+1..-1], new_bindings)
     end
     return fail unless index
     result_bindings
@@ -129,7 +121,7 @@ class PatternMatcher
     options = get_arr_from_sym(pattern)
     new_bindings = {}
     options.find do |pattern|
-      new_bindings = single_word_matcher(pattern, string, bindings)
+      new_bindings = pattern_matcher(pattern, string, bindings)
     end
     new_bindings
   end
@@ -138,7 +130,7 @@ class PatternMatcher
     options = get_arr_from_sym(pattern)
     new_bindings = {}
     options.all? do |pattern|
-      new_bindings = single_word_matcher(pattern, string, bindings)
+      new_bindings = pattern_matcher(pattern, string, bindings)
     end
     new_bindings
   end
@@ -183,6 +175,10 @@ end
 # string = "B is C is D is B is C is E"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
+# pattern = [ %w(?* ?X), 'is', %w(?* ?Y), 'is', %w(?* ?X), 'is', %w(?* ?Z) ]
+# string = %w(B is C is D is B is C is E)
+# PatternMatcher.new(pattern: pattern, string: string).solve
+
 # pattern = "?*(?X) is ?*(?Y) is ?*(?X)"
 # string = "B is C is D is B is C"
 # PatternMatcher.new(pattern: pattern, string: string).solve
@@ -210,3 +206,5 @@ end
 # pattern = "?*(?X) B C"
 # string = "A B C D"
 # PatternMatcher.new(pattern: pattern, string: string).solve
+
+# binding.pry
