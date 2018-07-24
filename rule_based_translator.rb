@@ -5,18 +5,18 @@ class RuleBasedTranslator
   extend RuleAbbreviator
 
   $pat_abbrev = {
-    "?X*" => "?*(?X)",
-    "?Y*" => "?*(?Y)"
+    "?X*" => %w(?* ?X),
+    "?Y*" => %w(?* ?Y),
   }
 
   class << self
     def translate(input:,
                   rules:,
                   matcher_func: Proc.new { |pattern, input| PatternMatcher.new(pattern: pattern, string: input).solve },
-                  patterns_func: Proc.new { |rule| [ rule[:pattern] ].flatten },
+                  patterns_func: Proc.new { |rule| rule[:pattern] },
                   response_func: Proc.new { |rule| rule[:responses].dup },
                   action_func: Proc.new do |response, variable_map|
-                    variable_map.each { |variable, value| response.gsub!(variable, value) }
+                    variable_map.each { |variable, value| response.gsub!(variable, join_array(value)) }
                     response
                   end)
 
@@ -29,6 +29,11 @@ class RuleBasedTranslator
       return unless rule
 
       action_func.call(response_func.call(rule), variable_map)
+    end
+
+    def join_array(arr)
+      return "" unless arr
+      arr.join(" ")
     end
   end
 end

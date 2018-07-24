@@ -1,16 +1,21 @@
 module RuleAbbreviator
   def expand_rules(rules)
-    rules.each do |rule|
-      rule_vars = rule[:pattern].is_a?(Array) ? rule[:pattern] : [ rule[:pattern] ]
-      rule_vars.each do |var|
-        expand_abbrev(var)
+    rules.map do |rule|
+      rule_patterns = rule[:pattern].is_a?(Array) ? rule[:pattern] : [ rule[:pattern] ]
+      rule_patterns.map! do |pattern|
+        pattern = pattern.split(" ") if pattern.is_a?(String)
+        expand_abbrev(pattern)
+        pattern
       end
+
+      rule[:pattern] = rule_patterns
+      rule
     end
   end
 
-  def expand_abbrev(string)
+  def expand_abbrev(pattern)
     $pat_abbrev.each do |abbrev, expansion|
-      string.gsub!(abbrev, expansion)
+      pattern.map! { |sym| sym == abbrev ? expansion : sym }
     end
   end
 

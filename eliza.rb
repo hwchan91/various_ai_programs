@@ -19,8 +19,7 @@ class Eliza < RuleBasedTranslator
       input.downcase.gsub(",", "").gsub(".", "").gsub("i am", "I'm").gsub("cannot", "can't").gsub("do not", "don't")
     end
 
-    def switch_viewpoint(value)
-        words = value.scan(/\w+/)
+    def switch_viewpoint(words)
         words.map! do |word|
           case word.downcase
           when 'i' then 'you'
