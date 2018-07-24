@@ -6,12 +6,18 @@ class EquationParser < RuleBasedTranslator
     attr_accessor :to_biexp_rules
 
     def string_to_array(string)
-      nested_arr, _ = parentheses_to_array(split_equation_string(string))
-      nested_arr
+      return "error" unless string_valid?(string)
+      nested_arr, remaining = parentheses_to_array(split_equation_string(string))
+      remaining.empty? ? nested_arr : "error"
+    end
+
+    def string_valid?(string)
+      string.scan(/\(/).size == string.scan(/\)/).size &&
+      string.scan(/\=/).size <= 1
     end
 
     def split_equation_string(string)
-      arr = string.scan(/(\d+|(\w|_)+|\+|\-|\*|\/|\^|\=|\(|\))/)
+      arr = string.scan(/((\w|\d|_)+|\d+|\+|\-|\*|\/|\^|\=|\(|\))/)
       return if arr.empty?
       arr.map(&:first).map{|sym| to_numerical(sym) }
     end
@@ -37,13 +43,24 @@ class EquationParser < RuleBasedTranslator
       end
     end
 
+    def arr_to_biexp_checked(exp)
+      return ["error"] if exp == 'error'
+      result = arr_to_biexp(exp)
+      binding.pry
+      check_if_biexp_valid?(result) ? result : ["error"]
+    end
+
+    def check_if_biexp_valid?(biexp)
+      biexp.flatten.none?{|elem| elem == 'error'} &&
+      biexp.flatten.any?{|elem| elem == '='}  == (biexp[1] == '=')# e.g. invalid: [ 5 * [3 = 2] ]
+    end
+
     def arr_to_biexp(exp)
       return exp if exp.class != Array
-      return arr_to_biexp(exp.first) if exp.size == 1
-      return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2 # i.e. [-, [x + y]]
-
+      return arr_to_biexp(exp.first) if exp.size == 1 # i.e. [ [ 1 + 2 ] ]
+      return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2  && ["+", "-"].include?(exp.first) # i.e. [-, [x + y]]
       biexp = translate(input: exp, rules: expand_rules(to_biexp_rules), action_func: action_func)
-      return biexp if exp
+      return biexp if biexp
 
       ["error"]
     end
@@ -58,7 +75,7 @@ class EquationParser < RuleBasedTranslator
     end
 
     def string_to_biexp(string)
-      arr_to_biexp(string_to_array(string))
+      arr_to_biexp_checked(string_to_array(string))
     end
 
     def biexp_to_string(arr)
@@ -83,41 +100,43 @@ class EquationParser < RuleBasedTranslator
 
   @to_biexp_rules = expand_rules([
     {
-      pattern: [%w(?X* = ?Y*)],
+      pattern: [%w(?X+ = ?Y+)],
       responses: %w(?X = ?Y)
     },
     {
-      pattern: [%w(+ ?X*)],
+      pattern: [%w(+ ?X+)],
       responses: %w(?X)
     },
     {
-      pattern: [%w(- ?X*)],
+      pattern: [%w(- ?X+)],
       responses: %w(- ?X)
     },
     {
-      pattern: [%w(?X* + ?Y*)],
+      pattern: [%w(?X+ + ?Y+)],
       responses: %w(?X + ?Y)
     },
     {
-      pattern: [%w(?X* - ?Y*)],
+      pattern: [%w(?X+ - ?Y+)],
       responses: %w(?X - ?Y)
     },
     {
-      pattern: [%w(?X* * ?Y*)],
+      pattern: [%w(?X+ * ?Y+)],
       responses: %w(?X * ?Y)
     },
     {
-      pattern: [%w(?X* / ?Y*)],
+      pattern: [%w(?X+ / ?Y+)],
       responses: %w(?X / ?Y)
     },
     {
-      pattern: [%w(?X* ^ ?Y*)],
+      pattern: [%w(?X+ ^ ?Y+)],
       responses: %w(?X ** ?Y)
     },
   ])
 end
 
-# string = "(5 + 3) * 2 = 11"
+# string = "(3 + 2) * 5 = 25 * (-var)"
+# arr = EquationParser.string_to_array(string)
+# p arr
 # biexp = EquationParser.string_to_biexp(string)
 # p biexp
 # p EquationParser.biexp_to_string(biexp)

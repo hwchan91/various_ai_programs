@@ -80,7 +80,7 @@ class PatternMatcher
   def segment_match(pattern_arr, string_arr, bindings, min_words: 0, max_words: nil)
     pattern_arr = pattern_arr.dup
     var = pattern_arr.shift.last
-    return update_bindings(var, string_arr, bindings) if pattern_arr.empty?
+    return update_bindings(var, string_arr, bindings) if pattern_arr.empty? && string_arr.size >= min_words
 
     result_bindings = {}
     index = ((min_words - 1) ... [string_arr.length, max_words].compact.min ).find do |index|
@@ -176,5 +176,10 @@ end
 # pattern = [ %w(?* ?X), "B", "C"]
 # string = "A B C D"
 # PatternMatcher.new(pattern: pattern, string: string).solve
+
+pattern = [ "B", "C", %w(?+ ?X)]
+string = "B C"
+PatternMatcher.new(pattern: pattern, string: string).solve
+
 
 # binding.pry

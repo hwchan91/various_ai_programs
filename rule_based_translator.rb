@@ -7,6 +7,8 @@ class RuleBasedTranslator
   $pat_abbrev = {
     "?X*" => %w(?* ?X),
     "?Y*" => %w(?* ?Y),
+    "?X+" => %w(?+ ?X),
+    "?Y+" => %w(?+ ?Y),
   }
 
   class << self
