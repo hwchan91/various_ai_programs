@@ -79,12 +79,16 @@ class PatternMatcher
 
   def segment_match(pattern_arr, string_arr, bindings, min_words: 0, max_words: nil)
     pattern_arr = pattern_arr.dup
-    var = pattern_arr.shift.last
+    segment_sym = pattern_arr.shift
+    _, var, cond = segment_sym
+
     return update_bindings(var, string_arr, bindings) if pattern_arr.empty? && string_arr.size >= min_words
 
     result_bindings = {}
     index = ((min_words - 1) ... [string_arr.length, max_words].compact.min ).find do |index|
-      next unless new_bindings = update_bindings(var, get_subarray(string_arr, index), bindings)
+      value = get_subarray(string_arr, index)
+      next unless eval_cond(var, value, cond, bindings)
+      next unless new_bindings = update_bindings(var, value, bindings)
       result_bindings = pattern_matcher(pattern_arr, string_arr[index+1..-1], new_bindings)
     end
     return fail unless index
@@ -93,6 +97,15 @@ class PatternMatcher
 
   def get_subarray(string_arr, index)
     index < 0 ? [] : string_arr[0..index]
+  end
+
+  def eval_cond(var, value, cond, bindings)
+    return true if cond.nil?
+    cond = cond.dup
+    cond.gsub!(var, 'value')
+    var_in_cond = cond.scan(/\?\w+/)
+    var_in_cond.each { |v| cond.gsub!(v, "bindings['#{v}']") }
+    eval(cond)
   end
 
   def segment_match_one_plus(pattern_arr, string_arr, bindings)
@@ -104,11 +117,12 @@ class PatternMatcher
   end
 
   def match_is(pattern, value, bindings)
-    _, var, cond = pattern[0], pattern[1], pattern[2]
-    return fail unless eval(cond)
+    _, var, cond = pattern
+    return fail unless eval_cond(var, value, cond, bindings)
     update_bindings(var, value, bindings)
   end
 
+  # can be replaced by match_is
   def match_or(pattern, string, bindings)
     _, options = pattern[0], pattern[1]
     new_bindings = {}
@@ -118,6 +132,7 @@ class PatternMatcher
     new_bindings
   end
 
+  # can be replaced by match_is
   def match_and(pattern, string, bindings)
     _, options = pattern[0], pattern[1]
     new_bindings = {}
@@ -127,6 +142,7 @@ class PatternMatcher
     new_bindings
   end
 
+  # can be replaced by match_is
   def match_not(pattern, string, bindings)
     _, reject_options = pattern[0], pattern[1].map{ |val| get_value(val, bindings) }
     return fail if reject_options.include?(string)
@@ -157,29 +173,43 @@ end
 # string = %w(A B C E F E F B C D)
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-# pattern = ["A", %w(?= ?B is_i?(value))]
+# pattern = ["A", %w(?= ?B is_i?(?B))]
 # string = ["A", 12]
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["?X", ["?|", %w(< = >) ], "?Y"]
 # string = "3 < 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = ["?X", ["?=", "?Y", "%w(< = >).include?(?Y)"], "?Z"]
+# string = "3 < 4"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["?X", "=/=", ["?!", %w(< = ?X)] ]
+# string = "3 =/= 4"
+# PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = ["?X", "=/=", ["?=", "?Y", "?Y != ?X"] ]
 # string = "3 =/= 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = [ "A", ["?&", [ %w(?= ?B is_i?(value)) , ["?|", [ %w(?= ?B value.to_i<5), %w(?= ?B value.to_i>20) ] ] ] ] ]
 # string = "A 35"
 # PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = [%w(?* ?Y),  %w(?= ?X is_i?(?X)&&(?X.to_i<5||?X.to_i>20)) ]
+# string = "10 15 35"
+# PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = [ %w(?* ?X), "B", "C"]
 # string = "A B C D"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 
-pattern = [ "B", "C", %w(?+ ?X)]
-string = "B C"
-PatternMatcher.new(pattern: pattern, string: string).solve
+# pattern = [ "B", "C", %w(?+ ?X)]
+# string = "B C"
+# PatternMatcher.new(pattern: pattern, string: string).solve
+
+# pattern =  [["?+", "?X", "?X.last != 'B'"], "C", "D"]
+# string = "A B D C D"
+# PatternMatcher.new(pattern: pattern, string: string).solve
+
 
 
 # binding.pry
