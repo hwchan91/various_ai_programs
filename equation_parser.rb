@@ -46,7 +46,6 @@ class EquationParser < RuleBasedTranslator
     def arr_to_biexp_checked(exp)
       return ["error"] if exp == 'error'
       result = arr_to_biexp(exp)
-      binding.pry
       check_if_biexp_valid?(result) ? result : ["error"]
     end
 
@@ -112,11 +111,11 @@ class EquationParser < RuleBasedTranslator
       responses: %w(- ?X)
     },
     {
-      pattern: [%w(?X+ + ?Y+)],
+      pattern: [ [ ["?+", "?X", "!['*', '^', '/'].include?(?X.last)"], "+", "?Y+"] ],
       responses: %w(?X + ?Y)
     },
     {
-      pattern: [%w(?X+ - ?Y+)],
+      pattern: [ [ ["?+", "?X", "!['*', '^', '/'].include?(?X.last)"], "-", "?Y+"] ],
       responses: %w(?X - ?Y)
     },
     {
@@ -134,7 +133,7 @@ class EquationParser < RuleBasedTranslator
   ])
 end
 
-# string = "(3 + 2) * 5 = 25 * (-var)"
+# string = "(3 + ----2) * 5 = 25 * -var"
 # arr = EquationParser.string_to_array(string)
 # p arr
 # biexp = EquationParser.string_to_biexp(string)
