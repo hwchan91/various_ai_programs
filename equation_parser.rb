@@ -5,10 +5,13 @@ class EquationParser < RuleBasedTranslator
   class << self
     attr_accessor :to_biexp_rules
 
+    def fail
+    end
+
     def string_to_array(string)
-      return "error" unless string_valid?(string)
+      return fail unless string_valid?(string)
       nested_arr, remaining = parentheses_to_array(split_equation_string(string))
-      remaining.empty? ? nested_arr : "error"
+      remaining.empty? ? nested_arr : fail
     end
 
     def string_valid?(string)
@@ -43,12 +46,13 @@ class EquationParser < RuleBasedTranslator
     end
 
     def arr_to_biexp_checked(exp)
-      return ["error"] if exp == 'error'
+      return fail if exp == fail
       result = arr_to_biexp(exp)
-      check_if_biexp_valid?(result) ? result : ["error"]
+      check_if_biexp_valid?(result) ? result : fail
     end
 
     def check_if_biexp_valid?(biexp)
+      return false if biexp.is_a?(String)
       biexp.flatten.none?{|elem| elem == 'error'} &&
       biexp.flatten.any?{|elem| elem == '='}  == (biexp[1] == '=')# e.g. invalid: [ 5 * [3 = 2] ]
     end

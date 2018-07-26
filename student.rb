@@ -139,3 +139,5 @@ end
 # puts Student.string_translate_to_expression("rectangle's width is 5")
 
 puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
+
+puts Student.solve_worded_question("If Mary's age is 5 greater than Tom, Tom is half of Jane's, and Jane is 10. What is the sum of Mary and Tom's ages?")

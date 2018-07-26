@@ -94,7 +94,7 @@ class SimpleEquationSolver
     end
 
     def solve_equation_in_strings(equation_strings)
-      equations = equation_strings.map { |eq| string_to_biexp(eq) }
+      equations = equation_strings.map { |eq| string_to_biexp(eq) }.compact
       solutions = solve(equations: equations)
       solutions.map { |sol| biexp_to_string(sol) }
     end
