@@ -100,31 +100,50 @@ class SimpleEquationSolver
     end
 
     def solve(equations: , known: [])
-      equations.each do |equation|
-        unknown = get_if_one_unknown(equation)
-        next unless unknown
-        answer = solve_arithmetic(isolate(equation, unknown))
-        remaining_equations = equations - [equation]
-        subbed_remaining_equations = remaining_equations.map do |rem_eq|
-          sublis(rem_eq, answer[0], answer[2])
+      unknown = nil
+      equation = equations.find { |equation| unknown = get_if_one_unknown(equation) }
+      return known unless unknown
+
+      answer = solve_arithmetic(isolate(equation, unknown))
+      remaining_equations = equations - [equation]
+      subbed_remaining_equations = sublis(remaining_equations, answer[0], answer[2])
+
+
+      if remaining_equations && subbed_remaining_equations.none? { |equation| get_if_one_unknown(equation) }
+        all_rem_vars = get_vars(subbed_remaining_equations).uniq
+        var_with_matched_words = all_rem_vars.map { |var| [var, num_of_matched_words(var, answer[0])] }
+                                             .reject { |var, num| num == 0 }
+                                             .sort_by { |var, num| num }.reverse
+                                             .map(&:first)
+
+        if var_with_matched_words.any?
+          var_with_matched_words.find do |var|
+            subbed_remaining_equations = sublis(subbed_remaining_equations, var, answer[2])
+            subbed_remaining_equations.any? { |equation| get_if_one_unknown(equation) }
+          end
         end
-        return solve(equations: subbed_remaining_equations, known: known.push(answer))
       end
 
-      known
+      solve(equations: subbed_remaining_equations, known: known.push(answer))
+    end
+
+    def num_of_matched_words(test, subj)
+      words_in_test = test.split(/_|'/)
+      words_in_subj = subj.split(/_|'/)
+      words_in_subj.size - (words_in_subj - words_in_test).size
     end
   end
 end
 
-# ses = SimpleEqautionSolver
-# biexp = ses.string_to_biexp("(x + 3 ) * 9 - --- 8 /2 = 2")
-# p solved= ses.isolate(biexp, 'x')
-# p evaled = ses.solve_arithmetic(solved)
-# p ses.biexp_to_string(evaled)
+# ses = SimpleEquationSolver
+# # biexp = ses.string_to_biexp("(x + 3 ) * 9 - --- 8 /2 = 2")
+# # p solved= ses.isolate(biexp, 'x')
+# # p evaled = ses.solve_arithmetic(solved)
+# # p ses.biexp_to_string(evaled)
 
 
 # eqs = [
-#   "x + 3 = 5",
-#   "x * y - 2 * 7 = 6"
+#   "x_something_something + 3 = 5",
+#   "x_alt * y - 2 * 7 = 6"
 # ]
 # p ses.solve_equation_in_strings(eqs)

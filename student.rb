@@ -34,8 +34,8 @@ class Student < RuleBasedTranslator
 
     def make_variable(words)
       words = words.dup
-      words.first
-      # words.join(" ")
+      # words.first
+      words.join("_")
     end
 
     def translate_to_expression(input)
@@ -138,4 +138,4 @@ end
 # binding.pry
 # puts Student.string_translate_to_expression("rectangle's width is 5")
 
-puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of advertisements he run, and the number of advertisements is 45, then what is the number of cusotomers Tom gets?")
+puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
