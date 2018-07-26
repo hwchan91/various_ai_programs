@@ -17,7 +17,7 @@ class EquationParser < RuleBasedTranslator
     end
 
     def split_equation_string(string)
-      arr = string.scan(/((\w|\d|_)+|\d+|\+|\-|\*|\/|\^|\=|\(|\))/)
+      arr = string.scan(/((\w|\d|'|_)+|\d+|\+|\-|\*|\/|\^|\=|\(|\))/)
       return if arr.empty?
       arr.map(&:first).map{|sym| to_numerical(sym) }
     end
@@ -76,8 +76,9 @@ class EquationParser < RuleBasedTranslator
       arr_to_biexp_checked(string_to_array(string))
     end
 
-    def biexp_to_string(arr)
-      result, _ = array_to_parentheses(arr)
+    def biexp_to_string(exp)
+      return exp.to_s unless exp.is_a? Array
+      result, _ = array_to_parentheses(exp)
       result.flatten.join(" ")
     end
 

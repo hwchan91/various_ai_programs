@@ -1,7 +1,10 @@
 require 'pry'
 require './rule_based_translator.rb'
+require './lisp_methods.rb'
 
 class Student < RuleBasedTranslator
+  extend ::LispMethods
+
   class << self
     attr_accessor :student_rules
 
@@ -52,16 +55,6 @@ class Student < RuleBasedTranslator
 
     def string_translate_to_expression(input)
       translate_to_expression(string_to_words(input))
-    end
-
-    def sublis(obj, sym, value)
-      if !obj.is_a?(Array)
-        obj == sym ? value : obj
-      else
-        obj.map do |elem|
-          sublis(elem, sym, value)
-        end
-      end
     end
   end
 
@@ -141,6 +134,6 @@ class Student < RuleBasedTranslator
   ])
 end
 
-# p Student.string_translate_to_expression("x is 5, y is 10, find x and y")
-# the problem of this version is that it cannot parse "x is 5 and y is 10" correctly, returning ["x", "=", [["5", "y"], "=", "10"]
+p Student.string_translate_to_expression("x is 5, y is 10, find x and y")
+#the problem of this version is that it cannot parse "x is 5 and y is 10" correctly, returning ["x", "=", [["5", "y"], "=", "10"]
 

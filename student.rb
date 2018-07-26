@@ -1,5 +1,6 @@
 require 'pry'
 require './rule_based_translator.rb'
+require './simple_equation_solver.rb'
 
 class Student < RuleBasedTranslator
   class << self
@@ -34,6 +35,7 @@ class Student < RuleBasedTranslator
     def make_variable(words)
       words = words.dup
       words.first
+      # words.join(" ")
     end
 
     def translate_to_expression(input)
@@ -48,6 +50,16 @@ class Student < RuleBasedTranslator
 
     def string_translate_to_expression(input)
       translate_to_expression(string_to_words(input))
+    end
+
+    def solve_worded_question(string)
+      expressions = string_translate_to_expression(string).split(",").map(&:strip).reject{|exp| exp.start_with?('to_find') || exp.empty? }
+      solutions = SimpleEquationSolver.solve_equation_in_strings(expressions)
+      puts "The equations to solve are:"
+      expressions.each { |exp| puts exp }
+      p "The solutions are:"
+      solutions.each { |exp| puts exp }
+      nil
     end
   end
 
@@ -124,4 +136,6 @@ class Student < RuleBasedTranslator
 end
 
 # binding.pry
-# puts Student.string_translate_to_expression("x is 5")
+# puts Student.string_translate_to_expression("rectangle's width is 5")
+
+puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of advertisements he run, and the number of advertisements is 45, then what is the number of cusotomers Tom gets?")
