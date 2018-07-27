@@ -53,7 +53,7 @@ class SimpleEquationSolver
 
     def get_vars(exp)
       exp = [exp] unless exp.class == Array
-      exp.flatten.reject { |elem| elem.is_a?(Numeric) || ['+', '-', '*', '/', '='].include?(elem) }
+      exp.flatten.reject { |elem| elem.is_a?(Numeric) || elem =~ /\d+(\.\d+)?/ || ['+', '-', '*', '/', '='].include?(elem) }
     end
 
     def include_var?(exp)
@@ -95,6 +95,11 @@ class SimpleEquationSolver
 
     def solve_equation_in_strings(equation_strings)
       equations = equation_strings.map { |eq| string_to_biexp(eq) }.compact
+      solutions = solve(equations: equations)
+      solutions.map { |sol| biexp_to_string(sol) }
+    end
+
+    def solve_equation(equations)
       solutions = solve(equations: equations)
       solutions.map { |sol| biexp_to_string(sol) }
     end

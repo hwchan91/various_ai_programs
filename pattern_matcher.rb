@@ -18,6 +18,7 @@ class PatternMatcher
   def initialize(opt = {})
     @pattern_arr = format_as_array(opt[:pattern])
     @string_arr  = format_as_array(opt[:string])
+    @from_end    = opt[:from_end] || false
   end
 
   def format_as_array(words)
@@ -85,7 +86,9 @@ class PatternMatcher
     return update_bindings(var, string_arr, bindings) if pattern_arr.empty? && string_arr.size >= min_words
 
     result_bindings = {}
-    index = ((min_words - 1) ... [string_arr.length, max_words].compact.min ).find do |index|
+    test_indexes = ((min_words - 1) ... [string_arr.length, max_words].compact.min).to_a
+    test_indexes.reverse! if @from_end
+    index = test_indexes.find do |index|
       value = get_subarray(string_arr, index)
       next unless eval_cond(var, value, cond, bindings)
       next unless new_bindings = update_bindings(var, value, bindings)

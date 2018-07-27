@@ -53,7 +53,7 @@ class Student < RuleBasedTranslator
     end
 
     def solve_worded_question(string)
-      expressions = string_translate_to_expression(string).split(",").map(&:strip).reject{|exp| exp.start_with?('to_find') || exp.empty? }
+      expressions = string_translate_to_expression(string).split(",").map(&:strip).reject{|exp| exp.empty? }
       solutions = SimpleEquationSolver.solve_equation_in_strings(expressions)
       puts "The equations to solve are:"
       expressions.each { |exp| puts exp }
@@ -77,8 +77,12 @@ class Student < RuleBasedTranslator
       responses: "?X"
     },
     {
-      pattern: "find ?X*",
-      responses: "to_find(?X)" # not sure
+      pattern: [ ["find", ["?+", "?X", "(?X - %w(difference sum product)).size == ?X.size"], "and", "?Y+"] ],
+      responses: "to_find_1 = ?X, to_find_2 = ?Y"
+    },
+    {
+      pattern: "find ?X+",
+      responses: "to_find = ?X"
     },
     {
       pattern: ["?X* = ?Y*", "?X* equals ?Y*", "?X* is same as ?Y*",  "?X* same as ?Y*", "?X* is equal to ?Y*", "?X* is ?Y*"],
@@ -137,7 +141,8 @@ end
 
 # binding.pry
 # puts Student.string_translate_to_expression("rectangle's width is 5")
+# p Student.string_translate_to_expression("x is the sum of 5 and 3. find x and y")
 
 puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
 
-puts Student.solve_worded_question("If Mary's age is 5 greater than Tom, Tom is half of Jane's, and Jane is 10. What is the sum of Mary and Tom's ages?")
+puts Student.solve_worded_question("If Mary's age is 5 greater than Tom, Tom is half of Jane's, and Jane is 10. Find the sum of Mary and Tom's ages?")

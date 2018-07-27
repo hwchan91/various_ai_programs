@@ -61,10 +61,17 @@ class EquationParser < RuleBasedTranslator
       return exp if exp.class != Array
       return arr_to_biexp(exp.first) if exp.size == 1 # i.e. [ [ 1 + 2 ] ]
       return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2  && ["+", "-"].include?(exp.first) # i.e. [-, [x + y]]
-      biexp = translate(input: exp, rules: expand_rules(to_biexp_rules), action_func: action_func)
+      biexp = translate(input: exp,
+                        rules: expand_rules(to_biexp_rules),
+                        matcher_func: matcher_func,
+                        action_func: action_func)
       return biexp if biexp
 
       ["error"]
+    end
+
+    def matcher_func
+      Proc.new { |pattern, input| PatternMatcher.new(pattern: pattern, string: input, from_end: true).solve }
     end
 
     def action_func
@@ -165,7 +172,7 @@ end
 # end
 
 
-# string = "(3 + ----2) * 5 = 25 * -var"
+# string = "(3 + - 2) * - 5 - 7 -10 = 25 * -var"
 # arr = EquationParser.string_to_array(string)
 # p arr
 # biexp = EquationParser.string_to_biexp(string)
