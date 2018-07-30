@@ -62,19 +62,19 @@ class EquationParser < RuleBasedTranslator
       return arr_to_biexp(exp.first) if exp.size == 1 # i.e. [ [ 1 + 2 ] ]
       return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2  && ["+", "-"].include?(exp.first) # i.e. [-, [x + y]]
       biexp = translate(input: exp,
-                        rules: expand_rules(to_biexp_rules),
-                        matcher_func: matcher_func,
-                        action_func: action_func)
+                        rules: to_biexp_rules,
+                        matcher_func: parser_matcher_func,
+                        action_func: parser_action_func)
       return biexp if biexp
 
       ["error"]
     end
 
-    def matcher_func
+    def parser_matcher_func
       Proc.new { |pattern, input| PatternMatcher.new(pattern: pattern, string: input, from_end: true).solve }
     end
 
-    def action_func
+    def parser_action_func
       Proc.new do |response, variable_map|
         variable_map.each do |variable, value|
           response.map! { |elem| elem == variable ?  arr_to_biexp(value) : elem }
@@ -105,6 +105,40 @@ class EquationParser < RuleBasedTranslator
         result << obj[0]
         array_to_parentheses(obj[1..-1], result)
       end
+    end
+
+    def simp(equation_string)
+      biexp = string_to_biexp(equation_string)
+      simplified = simplify(biexp)
+      biexp_to_string(simplified)
+    end
+
+    def simplify(exp)
+      return exp unless exp.class == Array
+      simplify_exp(exp.map { |elem| simplify elem })
+    end
+
+    def simplify_exp(exp)
+      case
+      when simplified_exp = translate(input: exp,
+                                      rules: simplify_rules,
+                                      patterns_func: Proc.new { |lhs, _, rhs| [lhs] },
+                                      response_func: Proc.new { |lhs, _, rhs| rhs },
+                                      action_func: Proc.new do |response, variable_map|
+                                        variable_map.each { |sym, val| response = sublis(response, sym ,val) }
+                                        simplify(response)
+                                      end)
+        simplified_exp
+      when evaluable?(exp)
+        eval(biexp_to_string(exp))
+      else
+        exp
+      end
+    end
+
+    def evaluable?(exp)
+      string = exp.is_a?(String) ? exp : exp.flatten.join(" ")
+      !(string =~ /[a-zA-Z=]/)
     end
   end
 
@@ -175,36 +209,13 @@ class EquationParser < RuleBasedTranslator
     "x + y - x = y",
   ].map do |eq|
     biexp = string_to_biexp(eq)
-    expand_rules(biexp)
+    biexp[0] = expand_rules(biexp[0])
+    [['x', '?X'], ['y', '?Y']].each do |sym, replacement|
+      biexp[2] = sublis(biexp[2], sym, replacement)
+    end
+    biexp
   end
 end
-
-### alternative method, does not accomodate -ve var, e.g '-2' or '--2'
-# def valid_equation?(equation)
-#   return if equation.scan(/=/).count > 1
-#   return unless equation =~ /^(\(*\s*\w+\s*\)*((\s*(\+|\-|\*|\/|\=)\s*)))*\(*\w+\)*$/
-
-#   while equation[0] == "(" && equation[-1] == ")"
-#     equation = equation[1..-2]
-#   end
-
-#   expressions = equation.split("=")
-#   expressions.none? do |exp|
-#     invalid = false
-#     parentheses = exp.scan(/\(|\)/)
-#     open_parentheses_count = parentheses.select { |sym| sym == "(" }.count
-#     invalid = true unless open_parentheses_count == parentheses.count / 2
-
-#     level_count = 0
-#     parentheses.each do |sym|
-#       next if invalid
-#       level_count += 1 if sym == "("
-#       level_count -= 1 if sym == ")"
-#       invalid = true if level_count < 0
-#     end
-#     invalid
-#   end
-# end
 
 
 # string = "(3 + - 2) * - 5 - 7 -10 = 25 * -var"
