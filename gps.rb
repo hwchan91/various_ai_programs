@@ -1,3 +1,5 @@
+require 'pry'
+
 class Op
   attr_accessor :action, :preconds, :add_list, :del_list
 
@@ -17,37 +19,23 @@ class Gps
     @goals         = opt[:goals]
     @all_ops       = opt[:all_ops]
     @steps         = []
-    # @level = -1
   end
 
   def solve
     achieve_all(goals: @goals) ? @steps : 'Not possible'
   end
 
-  def achieve_all(goals:, goal_stack: [])
-    # @level += 1
-    temp_state, temp_steps = @current_state.dup, @steps.dup
-    # p "#{'  ' * level} ####ACHIEVE ALL"
-    goals.each { |goal| achieve(goal: goal, goal_stack: goal_stack) }
-    backtrack(temp_state, temp_steps) unless all_goals_achieved?(goals)
-    # p "#{'  ' * level} FAILED OP; op #{ op = all_ops.find{|op| op.preconds == goals} ; !op.nil? ? op.action : "outermost"}" unless all_goals_achieved?(goals)
-    # @level -= 1
-    all_goals_achieved?(goals)
+  def achieve_all(goals:, goal_stack: [], achieved_goals: [])
+    goals.permutation.any?{ |goals|
+      goals.all? { |goal| achieve(goal: goal, goals: goals, goal_stack: goal_stack, achieved_goals: achieved_goals) }
+      all_goals_achieved?(goals)
+    }
   end
 
-  def backtrack(temp_state, temp_steps)
-    @current_state = temp_state
-    @steps = temp_steps
-  end
-
-  def achieve(goal:, goal_stack:)
+  def achieve(goal:, goals:, goal_stack:, achieved_goals:)
     return true if already_achieved?(goal)
     return false if entered_infinite_loop?(goal, goal_stack)
-    op = find_op_with_preconds_achieved(goal, goal_stack)
-    # p "NO APPLICABLE OPS #{goal}; goal stack #{goal_stack}; curr_state #{@current_state}" unless op
-    return false unless op
-    # p "#{'  ' * level} APPLY #{op.action}"
-    apply(op)
+    find_op_with_preconds_achieved(goal, goals, goal_stack, achieved_goals)
   end
 
   def already_achieved?(goal)
@@ -58,22 +46,48 @@ class Gps
     goal_stack.include?(goal)
   end
 
-  def find_op_with_preconds_achieved(goal, goal_stack)
+  def find_op_with_preconds_achieved(goal, goals, goal_stack, achieved_goals)
     new_goal_stack = goal_stack.dup.push(goal)
-    ops_matching_goal(goal).find do |op|
-      # p "#{'  ' * level} FIND OPS - op: #{op.action} - goal: #{goal} - goal_stack #{goal_stack}"
-      achieve_all(goals: op.preconds, goal_stack: new_goal_stack)
+    remaining_goals = goals - [goal]
+    achieved_goals = get_achieved_goals(goals, achieved_goals)
+
+    # p "find #{goal} - #{goals} - #{goal_stack}"
+    ops_matching_goal(goal, achieved_goals).find do |op|
+      temp = get_snapshot
+      next unless achieve_all(goals: op.preconds, goal_stack: new_goal_stack, achieved_goals: achieved_goals)
+      apply(op)
+      return true if achieve_all(goals: remaining_goals, goal_stack: goal_stack, achieved_goals: get_achieved_goals(goals, achieved_goals))
+
+      backtrack(temp) && false
     end
   end
 
-  def ops_matching_goal(goal)
-    matching_ops = all_ops.select{ |op| op.add_list.include?(goal) }
+  def get_achieved_goals(goals, achieved_goals)
+    ((goals - @current_state) + achieved_goals).uniq
+  end
+
+  def get_snapshot
+    [@current_state.dup, @steps.dup]
+  end
+
+  def backtrack(temp)
+    @current_state = temp[0]
+    @steps = temp[1]
+  end
+
+  def ops_matching_goal(goal, achieved_goals)
+    matching_ops = all_ops.select{ |op| op.add_list.include?(goal) }.reject{ |op| destroy_achieved_goals?(op, achieved_goals) }
     matching_ops.sort_by{|op| [(op.preconds - @current_state).size, (@goals - @current_state - op.add_list).size] } #less preconds, closer to end goal
+  end
+
+  def destroy_achieved_goals?(op, achieved_goals)
+    achieved_goals.size > (achieved_goals - op.del_list).size
   end
 
   def apply(op)
     return unless op.is_a? Op
-    @current_state = @current_state - op.del_list + op.add_list
+    @current_state = (@current_state - op.del_list + op.add_list).uniq
+    # p "Execute #{op.action}"
     @steps << "Execute #{op.action}"
   end
 
@@ -81,6 +95,7 @@ class Gps
     (goals - @current_state).empty?
   end
 end
+
 
 school_ops = [
   Op.new({
@@ -127,7 +142,6 @@ school_ops = [Op.new({
 })] + school_ops
 # returns not possible for v1 of GPS because of 'not looking after you don't leap'
 Gps.new(state: ['son at home', 'car works', 'have money'], goals:['son at school', 'have money'], all_ops: school_ops).solve
-
 
 banana_ops = [
   Op.new(
@@ -252,6 +266,10 @@ Gps.new(state: ['c on a', 'a on table', 'b on table', 'space on c', 'space on b'
 
 Gps.new(state: ['a on b', 'b on c', 'c on table', 'space on a'], goals:['c on b', 'b on a',], all_ops: make_block_ops(['a', 'b', 'c'])).solve
 
-# sussman anomaly
-# happens because: after solving b on c (immediately), to solve a on b, 'b on c' will have be destroyed; at the point when a on b is achieved, b is no longer on c; same for reverse condition
-Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['b on c', 'a on b',], all_ops: make_block_ops(['a', 'b', 'c'])).solve
+# sussman anomaly happens because: after solving b on c (immediately), to solve a on b, 'b on c' will have be destroyed; at the point when a on b is achieved, b is no longer on c; same for reverse condition
+# the following does not work: one a is above b, and cannot be broken, the goal is not achievable
+Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['a on b','b on c'], all_ops: make_block_ops(['a', 'b', 'c'])).solve
+# the following works (although not optimally)
+Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['b on c','a on b'], all_ops: make_block_ops(['a', 'b', 'c'])).solve
+# solution: automatically mix up goal seq => works for both now
+Gps.new(state: ['c on a', 'b on table', 'a on table', 'space on b', 'space on c'], goals:['a on b', 'b on c', 'c on table'], all_ops: make_block_ops(['a', 'b', 'c'])).solve
