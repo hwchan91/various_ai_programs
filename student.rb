@@ -87,17 +87,17 @@ class Student < RuleBasedTranslator
     end
   end
 
-  @student_rules = expand_rules([
+  @student_rules = [
     {
-      pattern: ["?X+ .",  "?X+ ,"],
+      pattern: [%w(?X+ .),  %w(?X+ ,)],
       responses: "?X"
     },
     {
-      pattern: ["?X+ . ?Y+", "?X+ then ?Y+", "?X+ , ?Y+"], #"?X+, ?Y+" put last because other phrase contain ','
+      pattern: [%w(?X+ . ?Y+), %w(?X+ then ?Y+), %w(?X+ , ?Y+)], #"?X+, ?Y+" put last because other phrase contain ','
       responses: %w(?X ?Y)
     },
     {
-      pattern: ["then ?X+", "if ?X+", "and ?X+"],
+      pattern: [%w(then ?X+), %w(if ?X+), %w(and ?X+)],
       responses: "?X"
     },
     {
@@ -105,7 +105,7 @@ class Student < RuleBasedTranslator
       responses: [%w(to_find_1 = ?X), %w(to_find_2 = ?Y)]
     },
     {
-      pattern: "find ?X+",
+      pattern: [%w(find ?X+)],
       responses: %w(to_find = ?X)
     },
     {
@@ -113,7 +113,7 @@ class Student < RuleBasedTranslator
       responses: %w(?X ?Y)
     },
     {
-      pattern: ["?X+ = ?Y+", "?X+ equals ?Y+", "?X+ is same as ?Y+",  "?X+ same as ?Y+", "?X+ is equal to ?Y+", "?X+ is ?Y+"],
+      pattern: [%w(?X+ = ?Y+), %w(?X+ equals ?Y+), %w(?X+ is same as ?Y+),  %w(?X+ same as ?Y+), %w(?X+ is equal to ?Y+), %w(?X+ is ?Y+)],
       responses: %w(?X = ?Y)
     },
     {
@@ -121,46 +121,46 @@ class Student < RuleBasedTranslator
       responses: %w(?X - ?Y)
     },
     {
-      pattern: ["difference between ?X+ and ?Y+", "difference ?X+ and ?Y+", "?X+ less than ?Y+"],
+      pattern: [%w(difference between ?X+ and ?Y+), %w(difference ?X+ and ?Y+), %w(?X+ less than ?Y+)],
       responses: %w(?Y - ?X)
     },
     {
-      pattern: ["?X+ + ?Y+", "?X+ plus ?Y+", "sum ?X+ and ?Y+", "?X+ greater than ?Y+"],
+      pattern: [%w(?X+ + ?Y+), %w(?X+ plus ?Y+), %w(sum ?X+ and ?Y+), %w(?X+ greater than ?Y+)],
       responses: %w(?X + ?Y)
     },
     {
-      pattern: ["?X+ * ?Y+", "product ?X+ and ?Y+", "?X+ times ?Y+"],
+      pattern: [%w(?X+ * ?Y+), %w(product ?X+ and ?Y+), %w(?X+ times ?Y+)],
       responses: %w(?X * ?Y)
     },
     {
-      pattern: ["?X+ / ?Y+", "?X+ per ?Y+", "?X+ divided by ?Y+"],
+      pattern: [%w(?X+ / ?Y+), %w(?X+ per ?Y+), %w(?X+ divided by ?Y+)],
       responses: %w(?X / ?Y)
     },
     {
-      pattern: ["half ?X+", "one half ?X+"],
+      pattern: [%w(half ?X+), %w(one half ?X+)],
       responses: ["?X", "/", 2.0]
     },
     {
-      pattern: "twice ?X+",
+      pattern: [%w(twice ?X+)],
       responses: ["?X", "*", 2.0]
     },
     {
-      pattern: ["square ?X+", "?X+ squared"],
+      pattern: [%w(square ?X+), %w(?X+ squared)],
       responses: ["?X", "*", "?X"]
     },
     {
-      pattern: ["?X+ % less than ?Y+", "?X+ % smaller than ?Y+"],
+      pattern: [%w(?X+ % less than ?Y+), %w(?X+ % smaller than ?Y+)],
       responses: ["?Y", "*", [[100.0, "-", "?X"], "/", 100.0]]
     },
     {
-      pattern: ["?X+ % more than ?Y+", "?X+ % greater than ?Y+"],
+      pattern: [%w(?X+ % more than ?Y+), %w(?X+ % greater than ?Y+)],
       responses: ["?Y", "*", [[100.0, "+", "?X"], "/", 100.0]]
     },
     {
-      pattern: "?X+ % ?Y+",
+      pattern: [%w(?X+ % ?Y+)],
       responses: [["?X", "/",  100.0], "*", "?Y"]
     },
-  ])
+  ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
 end
 
 # p Student.string_translate_to_expression("x is 5, y is 10, find x and y")
@@ -168,6 +168,6 @@ end
 # biexp = Student.string_translate_to_expression("x is the sum of 5 and 3, y")
 # binding.pry
 
-# puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
+puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
 
 # p Student.string_translate_to_expression("x is 3 - 2 - 1")

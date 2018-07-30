@@ -1,30 +1,22 @@
+require './lisp_methods.rb'
+
 module RuleAbbreviator
+  include LispMethods
+
+  $pat_abbrev = {
+    "?X*" => %w(?* ?X),
+    "?Y*" => %w(?* ?Y),
+    "?X+" => %w(?+ ?X),
+    "?Y+" => %w(?+ ?Y),
+    "x"   => %w(?+ ?X),
+    "y"   => %w(?+ ?Y),
+  }
+
   def expand_rules(rules)
-    rules.each do |rule|
-      rule[:pattern] = rule[:pattern].is_a?(Array) ? rule[:pattern] : [ rule[:pattern] ]
-      rule[:pattern].map! do |pattern|
-        pattern = pattern.split(" ") if pattern.is_a?(String)
-        expand_abbrev(pattern)
-      end
+    $pat_abbrev.each do |pattern, expansion|
+      rules = sublis(rules, pattern, expansion)
     end
-  end
-
-  def expand_abbrev(arr)
-    arr.map do |sym|
-      if sym.is_a? Array
-        expand_abbrev(sym)
-      else
-        convert_abbrev(sym)
-      end
-    end
-  end
-
-  def convert_abbrev(sym)
-    if $pat_abbrev.keys.any? { |abb| abb == sym }
-      $pat_abbrev[sym]
-    else
-      sym
-    end
+    rules
   end
 
   def add_pat_abbrev(pattern:, expansion:)

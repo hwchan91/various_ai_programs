@@ -35,7 +35,7 @@ class PatternMatcher
 
     if is_variable?(pattern)
       return update_bindings(pattern, string, bindings)
-    elsif pattern == string
+    elsif pattern == string || pattern.is_a?(String) && string.is_a?(String) && pattern.downcase == string.downcase
       return bindings
     elsif single_pattern(pattern)
       return send(single_pattern(pattern), pattern, string, bindings)

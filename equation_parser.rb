@@ -3,7 +3,7 @@ require './rule_based_translator.rb'
 
 class EquationParser < RuleBasedTranslator
   class << self
-    attr_accessor :to_biexp_rules
+    attr_accessor :to_biexp_rules, :simplify_rules
 
     def fail
     end
@@ -108,7 +108,7 @@ class EquationParser < RuleBasedTranslator
     end
   end
 
-  @to_biexp_rules = expand_rules([
+  @to_biexp_rules = [
     {
       pattern: [%w(?X+ = ?Y+)],
       responses: %w(?X = ?Y)
@@ -141,7 +141,42 @@ class EquationParser < RuleBasedTranslator
       pattern: [%w(?X+ ^ ?Y+)],
       responses: %w(?X ** ?Y)
     },
-  ])
+  ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
+
+  @simplify_rules = [
+    "x + 0 = x",
+    "0 + x = x",
+    "x + x = 2 * x",
+    "x - 0 = x",
+    "0 - x = -x",
+    "x - x = 0",
+    "- -x = x",
+    "x * 1 = x",
+    "1 * x = x",
+    "x * 0 = 0",
+    "0 * x = 0",
+    "x * x = x ^ 2",
+    "x / 0 = undefined",
+    "0 / x = 0",
+    "x / 1 = x",
+    "x / x = 1",
+    "0 ^ 0 = undefined",
+    "x ^ 0 = 1",
+    "0 ^ x = 0",
+    "1 ^ x = 1",
+    "x ^ 1 = x",
+    "x ^ -1 = 1/x",
+    "x * (y/x) = y",
+    "(y/x) * x = y",
+    "(y * x)/x = y",
+    "(x * y)/x = y",
+    "x + -x = 0",
+    "-x + x = 0",
+    "x + y - x = y",
+  ].map do |eq|
+    biexp = string_to_biexp(eq)
+    expand_rules(biexp)
+  end
 end
 
 ### alternative method, does not accomodate -ve var, e.g '-2' or '--2'

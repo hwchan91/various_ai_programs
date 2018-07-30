@@ -4,13 +4,6 @@ require './rule_abbreviator.rb'
 class RuleBasedTranslator
   extend RuleAbbreviator
 
-  $pat_abbrev = {
-    "?X*" => %w(?* ?X),
-    "?Y*" => %w(?* ?Y),
-    "?X+" => %w(?+ ?X),
-    "?Y+" => %w(?+ ?Y),
-  }
-
   class << self
     def translate(input:,
                   rules:,
