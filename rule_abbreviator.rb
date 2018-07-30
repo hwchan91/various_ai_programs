@@ -8,8 +8,8 @@ module RuleAbbreviator
     "?Y*" => %w(?* ?Y),
     "?X+" => %w(?+ ?X),
     "?Y+" => %w(?+ ?Y),
-    "x"   => %w(?+ ?X),
-    "y"   => %w(?+ ?Y),
+    "x"   => "?X",
+    "y"   => "?Y",
   }
 
   def expand_rules(rules)

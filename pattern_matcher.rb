@@ -39,8 +39,8 @@ class PatternMatcher
       return bindings
     elsif single_pattern(pattern)
       return send(single_pattern(pattern), pattern, string, bindings)
-    elsif segment_pattern(pattern)
-      return send(segment_pattern(pattern), pattern, string, bindings)
+    elsif segment_pattern(pattern, string)
+      return send(segment_pattern(pattern, string), pattern, string, bindings)
     elsif pattern.class == Array && string.class == Array
       new_bindings = pattern_matcher(pattern.first, string.first, bindings)
       pattern_matcher(rest_of_arr(pattern), rest_of_arr(string), new_bindings)
@@ -65,15 +65,15 @@ class PatternMatcher
   end
 
   def is_variable?(sym)
-    sym && sym.class != Array && sym[/^\?[a-zA-Z]+$/]
+    sym && sym.is_a?(String) && sym[/^\?[a-zA-Z]+$/]
   end
 
   def single_pattern(sym)
     sym && sym.class == Array && SINGLE_PATTERNS[sym.first]
   end
 
-  def segment_pattern(pattern)
-    return unless pattern.class == Array
+  def segment_pattern(pattern, string)
+    return unless pattern.class == Array && string.class == Array
     sym = pattern.first
     sym && sym.class == Array && SEGMENT_PATTERNS[sym.first]
   end
@@ -219,3 +219,8 @@ end
 
 
 # binding.pry
+
+
+# pattern = [["?+", "?X"], "+", [["?+", "?Y"], "-", ["?+", "?X"]]]
+# string = [2.0, "-", "x"]
+# p PatternMatcher.new(pattern: pattern, string: string).solve
