@@ -83,7 +83,10 @@ class PatternMatcher
     segment_sym = pattern_arr.shift
     _, var, cond = segment_sym
 
-    return update_bindings(var, string_arr, bindings) if pattern_arr.empty? && string_arr.size >= min_words
+    if pattern_arr.empty? && string_arr.size >= min_words
+      return fail unless cond.nil? || eval_cond(var, string_arr, cond, bindings)
+      return update_bindings(var, string_arr, bindings)
+    end
 
     result_bindings = {}
     test_indexes = ((min_words - 1) ... [string_arr.length, max_words].compact.min).to_a

@@ -117,7 +117,7 @@ class Student < RuleBasedTranslator
       responses: %w(?X = ?Y)
     },
     {
-      pattern: ["?X+ - ?Y+", "?X+ minus ?Y+"],
+      pattern: [["?X+", "-", ["?+", "?Y", " !(?Y.include?('-') || ?Y.include?('minus')) "]], ["?X+", "minus", ["?+", "?Y", " !(?Y.include?('-') || ?Y.include?('minus')) "]]],
       responses: %w(?X - ?Y)
     },
     {
@@ -168,4 +168,6 @@ end
 # biexp = Student.string_translate_to_expression("x is the sum of 5 and 3, y")
 # binding.pry
 
-puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
+# puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
+
+# p Student.string_translate_to_expression("x is 3 - 2 - 1")
