@@ -33,15 +33,16 @@ class PatternMatcher
   def pattern_matcher(pattern, string, bindings = {})
     return fail if bindings == fail
 
-    if is_variable?(pattern)
-      return update_bindings(pattern, string, bindings)
-    elsif pattern == string || pattern.is_a?(String) && string.is_a?(String) && pattern.downcase == string.downcase
-      return bindings
-    elsif single_pattern(pattern)
-      return send(single_pattern(pattern), pattern, string, bindings)
-    elsif segment_pattern(pattern, string)
-      return send(segment_pattern(pattern, string), pattern, string, bindings)
-    elsif pattern.class == Array && string.class == Array
+    case
+    when is_variable?(pattern)
+      update_bindings(pattern, string, bindings)
+    when pattern == string || pattern.is_a?(String) && string.is_a?(String) && pattern.downcase == string.downcase
+      bindings
+    when single_pattern(pattern)
+      send(single_pattern(pattern), pattern, string, bindings)
+    when segment_pattern(pattern, string)
+      send(segment_pattern(pattern, string), pattern, string, bindings)
+    when pattern.class == Array && string.class == Array
       new_bindings = pattern_matcher(pattern.first, string.first, bindings)
       pattern_matcher(rest_of_arr(pattern), rest_of_arr(string), new_bindings)
     else
