@@ -1,11 +1,8 @@
 require 'pry'
 require './rule_based_translator.rb'
-require './lisp_methods.rb'
 require './simple_equation_solver.rb'
 
 class Student < RuleBasedTranslator
-  extend ::LispMethods
-
   class << self
     attr_accessor :student_rules
 

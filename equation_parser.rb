@@ -3,7 +3,7 @@ require './rule_based_translator.rb'
 
 class EquationParser < RuleBasedTranslator
   class << self
-    attr_accessor :to_biexp_rules, :simplify_rules
+    attr_accessor :to_biexp_rules
 
     def fail
     end
@@ -106,40 +106,6 @@ class EquationParser < RuleBasedTranslator
         array_to_parentheses(obj[1..-1], result)
       end
     end
-
-    def simp(equation_string)
-      biexp = string_to_biexp(equation_string)
-      simplified = simplify(biexp)
-      biexp_to_string(simplified)
-    end
-
-    def simplify(exp)
-      return exp unless exp.class == Array
-      simplify_exp(exp.map { |elem| simplify elem })
-    end
-
-    def simplify_exp(exp)
-      case
-      when simplified_exp = translate(input: exp,
-                                      rules: simplify_rules,
-                                      patterns_func: Proc.new { |lhs, _, rhs| [lhs] },
-                                      response_func: Proc.new { |lhs, _, rhs| rhs },
-                                      action_func: Proc.new do |response, variable_map|
-                                        variable_map.each { |sym, val| response = sublis(response, sym ,val) }
-                                        simplify(response)
-                                      end)
-        simplified_exp
-      when evaluable?(exp)
-        eval(biexp_to_string(exp))
-      else
-        exp
-      end
-    end
-
-    def evaluable?(exp)
-      string = exp.is_a?(String) ? exp : exp.flatten.join(" ")
-      !(string =~ /[a-zA-Z=]/)
-    end
   end
 
   @to_biexp_rules = [
@@ -176,41 +142,6 @@ class EquationParser < RuleBasedTranslator
       responses: %w(?X ** ?Y)
     },
   ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
-
-  @simplify_rules = [
-    "x + 0 = x",
-    "0 + x = x",
-    "x + x = 2 * x",
-    "x - 0 = x",
-    "0 - x = -x",
-    "x - x = 0",
-    "- -x = x",
-    "x * 1 = x",
-    "1 * x = x",
-    "x * 0 = 0",
-    "0 * x = 0",
-    "x * x = x ^ 2",
-    "x / 0 = undefined",
-    "0 / x = 0",
-    "x / 1 = x",
-    "x / x = 1",
-    "0 ^ 0 = undefined",
-    "x ^ 0 = 1",
-    "0 ^ x = 0",
-    "1 ^ x = 1",
-    "x ^ 1 = x",
-    "x ^ -1 = 1/x",
-    "x * (y/x) = y",
-    "(y/x) * x = y",
-    "(y * x)/x = y",
-    "(x * y)/x = y",
-    "x + -x = 0",
-    "-x + x = 0",
-    "x + y - x = y",
-  ].map do |eq|
-    biexp = string_to_biexp(eq)
-    expand_rules(biexp)
-  end
 end
 
 
@@ -220,6 +151,3 @@ end
 # biexp = EquationParser.string_to_biexp(string)
 # p biexp
 # p EquationParser.biexp_to_string(biexp)
-
-
-p EquationParser.simp("x - x")

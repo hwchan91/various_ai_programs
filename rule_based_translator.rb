@@ -1,8 +1,17 @@
 require './pattern_matcher.rb'
-require './rule_abbreviator.rb'
+require './lisp_methods.rb'
 
 class RuleBasedTranslator
-  extend RuleAbbreviator
+  extend ::LispMethods
+
+  PAT_ABBREV = {
+    "?X*" => %w(?* ?X),
+    "?Y*" => %w(?* ?Y),
+    "?X+" => %w(?+ ?X),
+    "?Y+" => %w(?+ ?Y),
+    "x"   => "?X",
+    "y"   => "?Y",
+  }.freeze
 
   class << self
     def translate(input:,
@@ -37,6 +46,13 @@ class RuleBasedTranslator
     def join_array(arr)
       return "" unless arr
       arr.join(" ")
+    end
+
+    def expand_rules(rules)
+      PAT_ABBREV.each do |pattern, expansion|
+        rules = sublis(rules, pattern, expansion)
+      end
+      rules
     end
   end
 end
