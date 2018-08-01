@@ -20,9 +20,10 @@ class EquationParser < RuleBasedTranslator
     end
 
     def split_equation_string(string)
+      %w(x y u v).each { |var| string = string.gsub("d#{var}", "d #{var}") }
       arr = string.scan(/((\w|\d|'|_)+|\d+|\+|\-|\*|\/|\^|\=|\(|\))/)
       return if arr.empty?
-      arr.map(&:first).map{|sym| to_numerical(sym) }
+      arr.map!(&:first).map! { |sym| to_numerical(sym) }
     end
 
     def to_numerical(sym)
@@ -60,7 +61,7 @@ class EquationParser < RuleBasedTranslator
     def arr_to_biexp(exp)
       return exp if exp.class != Array
       return arr_to_biexp(exp.first) if exp.size == 1 # i.e. [ [ 1 + 2 ] ]
-      return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2 && ["+", "-", "log", "sin", "cos", "tan", "d", "Int"].include?(exp.first) # i.e. [-, [x + y]]
+      return [ exp.first, arr_to_biexp(exp.last) ] if exp.size == 2 && ["+", "-", "log", "sin", "cos", "tan", "d", "int"].include?(exp.first) # i.e. [-, [x + y]]
       biexp = translate(input: exp,
                         rules: to_biexp_rules,
                         matcher_func: parser_matcher_func,
@@ -134,6 +135,14 @@ class EquationParser < RuleBasedTranslator
       responses: %w(?X * ?Y)
     },
     {
+      pattern: [%w(d ?Y+ / d ?X+)],
+      responses: %w(d ?Y ?X)
+    },
+    {
+      pattern: [%w(Int ?Y+ d ?X+)],
+      responses: %w(int ?Y ?X)
+    },
+    {
       pattern: [%w(?X+ / ?Y+)],
       responses: %w(?X / ?Y)
     },
@@ -146,6 +155,9 @@ end
 
 
 # string = "log(x) + log(y) = log(x + y)"
+# string = "Int x^2  d x"
+# string = "dx/dx"
+# string = "x ^ -1"
 # arr = EquationParser.string_to_array(string)
 # p arr
 # biexp = EquationParser.string_to_biexp(string)

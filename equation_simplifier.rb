@@ -71,7 +71,7 @@ class EquationSimplifier < RuleBasedTranslator
     "0 ^ x = 0",
     "1 ^ x = 1",
     "x ^ 1 = x",
-    "x ^ -1 = 1/x",
+    # "x ^ -1 = 1/x", #cannot parse -1 correctly
     "x * (y/x) = y",
     "(y/x) * x = y",
     "(y * x)/x = y",
@@ -96,6 +96,7 @@ class EquationSimplifier < RuleBasedTranslator
     "log(x) - log(y) = log(x/y)",
     "(sin(x))^2 + (cos(x))^2 = 1",
   ].map { |eq| expand_rules(string_to_biexp(eq)) } +
+  [ [["?X", "**", -1.0], "=", [1.0, "/", "?X"]] ] +
   [
     "s * n = n * s",
     "n * (m * x) = (n * m) * x",
@@ -105,10 +106,23 @@ class EquationSimplifier < RuleBasedTranslator
     "(x + m) + n = x + (n + m)",
     "x + (y + n) = (x + y) + n",
     "(x + n) + y = (x + y) + n",
+    "dx/dx = 1",
+    "d(u+v)/dx = (du/dx)+(dv/dx)",
+    "d(u-v)/dx = (du/dx)+(dv/dx)",
+    "d(-u)/dx = -(du/dx)",
+    "d(u*v)/dx = u*(dv/dx) + v*(du/dx)",
+    "d(u/v)/dx = (v*(du/dx) - u*(dv/dx))/(v^2)",
+    "d(u^n)/dx = n*u^(n-1) * (du/dx)",
+    "d(u^v)/dx = v*u^(v-1) * (du/dx) + u^v*(log u)*(dv/dx)",
+    "d(log u)/dx = (du/dx)/u",
+    "d(sin u)/dx = (cos u) * (du/dx)",
+    "d(cos u)/dx = -(sin u) * (du/dx)",
+    "d(e^u)/dx = (e^u) * (du/dx)",
+    "du/dx = 0"
   ].map do |eq|
     biexp = string_to_biexp(eq)
     biexp[0] = expand_rules(biexp[0])
-    %w(x y n m s).each { |v| biexp[2] = sublis(biexp[2], v, "?#{v.upcase}") }
+    %w(x y n m s u v).each { |v| biexp[2] = sublis(biexp[2], v, "?#{v.upcase}") }
     biexp
   end
 end
@@ -121,3 +135,10 @@ end
 # p EquationSimplifier.simp("3 + x + 4 - x")
 
 # p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
+
+# p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
+
+# p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
+
+# p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
+

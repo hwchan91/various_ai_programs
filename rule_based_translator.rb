@@ -12,6 +12,8 @@ class RuleBasedTranslator
     "x"   => "?X",
     "y"   => "?Y",
     "z"   => "?Z",
+    "u"   => "?U",
+    "v"   => "?V",
     "n"   => %w(?= ?N ?N.is_a?(Numeric)),
     "m"   => %w(?= ?M ?M.is_a?(Numeric)),
     "s"   => %w(?= ?S !(?S.is_a?(Numeric))),
