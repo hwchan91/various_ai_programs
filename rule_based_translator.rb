@@ -11,6 +11,10 @@ class RuleBasedTranslator
     "?Y+" => %w(?+ ?Y),
     "x"   => "?X",
     "y"   => "?Y",
+    "z"   => "?Z",
+    "n"   => %w(?= ?N ?N.is_a?(Numeric)),
+    "m"   => %w(?= ?M ?M.is_a?(Numeric)),
+    "s"   => %w(?= ?S !(?S.is_a?(Numeric))),
   }.freeze
 
   class << self
