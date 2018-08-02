@@ -1,6 +1,8 @@
 require 'pry'
+require './lisp_methods.rb'
 
 class PatternMatcher
+  include ::LispMethods
   attr_accessor :pattern, :string
 
   SINGLE_PATTERNS = {
@@ -36,7 +38,7 @@ class PatternMatcher
     case
     when is_variable?(pattern)
       update_bindings(pattern, string, bindings)
-    when pattern == string || pattern.is_a?(String) && string.is_a?(String) && pattern.downcase == string.downcase
+    when equal?(pattern, string)
       bindings
     when single_pattern(pattern)
       send(single_pattern(pattern), pattern, string, bindings)
@@ -50,8 +52,8 @@ class PatternMatcher
     end
   end
 
-  def rest_of_arr(arr)
-    arr[1..-1] || []
+  def equal?(pattern, string)
+    pattern == string || pattern.is_a?(String) && string.is_a?(String) && pattern.downcase == string.downcase
   end
 
   def fail
@@ -170,56 +172,52 @@ end
 
 # pattern = [ %w(?* ?X), 'is', %w(?* ?Y), 'is', %w(?* ?X), 'is', %w(?* ?Z) ]
 # string = %w(B is C is D is B is C is E)
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern =  [ %w(?* ?X), 'is', %w(?* ?Y), 'is', %w(?* ?X) ]
 # string = %w(B is C is D is B is C)
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["A",  %w(?+ ?X), %w(?? ?Y), %w(?* ?Z), %w(?? ?Y), %w(?+ ?X), "D" ]
 # string = %w(A B C E F E F B C D)
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["A", %w(?= ?B is_i?(?B))]
 # string = ["A", 12]
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["?X", ["?|", %w(< = >) ], "?Y"]
 # string = "3 < 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 # pattern = ["?X", ["?=", "?Y", "%w(< = >).include?(?Y)"], "?Z"]
 # string = "3 < 4"
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = ["?X", "=/=", ["?!", %w(< = ?X)] ]
 # string = "3 =/= 4"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 # pattern = ["?X", "=/=", ["?=", "?Y", "?Y != ?X"] ]
 # string = "3 =/= 4"
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = [ "A", ["?&", [ %w(?= ?B is_i?(value)) , ["?|", [ %w(?= ?B value.to_i<5), %w(?= ?B value.to_i>20) ] ] ] ] ]
 # string = "A 35"
 # PatternMatcher.new(pattern: pattern, string: string).solve
 # pattern = [%w(?* ?Y),  %w(?= ?X is_i?(?X)&&(?X.to_i<5||?X.to_i>20)) ]
 # string = "10 15 35"
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = [ %w(?* ?X), "B", "C"]
 # string = "A B C D"
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern = [ "B", "C", %w(?+ ?X)]
 # string = "B C"
-# PatternMatcher.new(pattern: pattern, string: string).solve
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 # pattern =  [["?+", "?X", "?X.last != 'B'"], "C", "D"]
 # string = "A B D C D"
-# PatternMatcher.new(pattern: pattern, string: string).solve
-
-
-
-# binding.pry
+# p PatternMatcher.new(pattern: pattern, string: string).solve
 
 
 # pattern = [["?+", "?X"], "+", [["?+", "?Y"], "-", ["?+", "?X"]]]

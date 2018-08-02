@@ -37,7 +37,7 @@ class Eliza < RuleBasedTranslator
     end
   end
 
-  @eliza_rules = [
+  @eliza_rules = expand_pattern([
     {
       pattern: [%w(?X* fuck ?Y*), %w(?X* shit ?Y*), %w(?X* cunt ?Y*)],
       responses: ["You seem angry", "Words cannot hurt me","What have I done to make you use such language?", "Same to you", "What made you behave so childishly?"]
@@ -206,7 +206,7 @@ class Eliza < RuleBasedTranslator
       pattern: [['?X*']],
       responses: ["Very interesting", "I am not sure I understand you fully", "What does that suggest to you?", "Please continue", "Go on", "Do you feel strongly about discussing such things?"]
     },
-  ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
+  ])
 end
 
 Eliza.run

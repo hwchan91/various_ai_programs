@@ -24,7 +24,7 @@ class EquationSimplifier < RuleBasedTranslator
                                       patterns_func: Proc.new { |lhs, _, rhs| [lhs] },
                                       response_func: Proc.new { |lhs, _, rhs| rhs },
                                       action_func: Proc.new do |response, variable_map|
-                                        variable_map.each { |sym, val| response = sublis(response, sym ,val) }
+                                        response = sublis(response, variable_map)
                                         simplify(response)
                                       end)
         simplified_exp
@@ -122,23 +122,27 @@ class EquationSimplifier < RuleBasedTranslator
   ].map do |eq|
     biexp = string_to_biexp(eq)
     biexp[0] = expand_rules(biexp[0])
-    %w(x y n m s u v).each { |v| biexp[2] = sublis(biexp[2], v, "?#{v.upcase}") }
+
+    hash = Hash.new
+    %w(x y n m s u v).each { |var| hash[var] = "?#{var.upcase}" }
+    biexp[2] = sublis(biexp[2], hash )
+
     biexp
   end
 end
 
 
-# p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
+p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
 
-# p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
+p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
 
-# p EquationSimplifier.simp("3 + x + 4 - x")
+p EquationSimplifier.simp("3 + x + 4 - x")
 
-# p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
+p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
 
-# p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
+p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
 
-# p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
+p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
 
-# p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
+p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
 

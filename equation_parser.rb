@@ -109,7 +109,7 @@ class EquationParser < RuleBasedTranslator
     end
   end
 
-  @to_biexp_rules = [
+  @to_biexp_rules = expand_pattern([
     {
       pattern: [%w(?X+ = ?Y+)],
       responses: %w(?X = ?Y)
@@ -150,7 +150,7 @@ class EquationParser < RuleBasedTranslator
       pattern: [%w(?X+ ^ ?Y+)],
       responses: %w(?X ** ?Y)
     },
-  ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
+  ])
 end
 
 

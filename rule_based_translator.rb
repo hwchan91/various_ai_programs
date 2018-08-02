@@ -55,8 +55,12 @@ class RuleBasedTranslator
     end
 
     def expand_rules(rules)
-      PAT_ABBREV.each do |pattern, expansion|
-        rules = sublis(rules, pattern, expansion)
+      sublis(rules, PAT_ABBREV)
+    end
+
+    def expand_pattern(rules)
+      rules.each do |rule|
+        rule[:pattern] = expand_rules(rule[:pattern])
       end
       rules
     end

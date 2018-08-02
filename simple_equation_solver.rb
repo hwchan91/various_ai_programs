@@ -111,7 +111,7 @@ class SimpleEquationSolver
 
       answer = solve_arithmetic(isolate(equation, unknown))
       remaining_equations = equations - [equation]
-      subbed_remaining_equations = sublis(remaining_equations, answer[0], answer[2])
+      subbed_remaining_equations = sublis(remaining_equations, {answer[0] => answer[2]} )
 
 
       if remaining_equations && subbed_remaining_equations.none? { |equation| get_if_one_unknown(equation) }
@@ -123,7 +123,7 @@ class SimpleEquationSolver
 
         if var_with_matched_words.any?
           var_with_matched_words.find do |var|
-            subbed_remaining_equations = sublis(subbed_remaining_equations, var, answer[2])
+            subbed_remaining_equations = sublis(subbed_remaining_equations, {var => answer[2]})
             subbed_remaining_equations.any? { |equation| get_if_one_unknown(equation) }
           end
         end

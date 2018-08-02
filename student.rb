@@ -49,7 +49,7 @@ class Student < RuleBasedTranslator
     def action_func
       Proc.new do |response, variable_map|
         variable_map.each do |variable, value|
-          response = sublis(response, variable, translate_to_expression(value))
+          response = replace_sym(response, variable, translate_to_expression(value))
         end
         response
       end
@@ -84,7 +84,7 @@ class Student < RuleBasedTranslator
     end
   end
 
-  @student_rules = [
+  @student_rules = expand_pattern([
     {
       pattern: [%w(?X+ .),  %w(?X+ ,)],
       responses: "?X"
@@ -157,13 +157,12 @@ class Student < RuleBasedTranslator
       pattern: [%w(?X+ % ?Y+)],
       responses: [["?X", "/",  100.0], "*", "?Y"]
     },
-  ].map { |rule| rule[:pattern] = expand_rules(rule[:pattern]) ; rule }
+  ])
 end
-
 # p Student.string_translate_to_expression("x is 5, y is 10, find x and y")
 # p Student.string_translate_to_expression("x is 5 and y is 10")
-# biexp = Student.string_translate_to_expression("x is the sum of 5 and 3, y")
-# binding.pry
+# p Student.string_translate_to_expression("x is the sum of 5 and 3, y")
+
 
 puts Student.solve_worded_question("If the number of customers Tom gets is twice the square of 20% of the number of his advertisements, and the number of advertisements is 45, then what is the amount of customers?")
 
