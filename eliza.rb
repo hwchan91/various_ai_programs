@@ -30,6 +30,8 @@ class Eliza < RuleBasedTranslator
           when 'your' then 'my'
           when 'mine' then 'yours'
           when 'yours' then 'mine'
+          when 'yourself' then 'myself'
+          when 'myself' then 'yourself'
           else word
           end
         end
@@ -204,7 +206,7 @@ class Eliza < RuleBasedTranslator
     },
     {
       pattern: [['?X*']],
-      responses: ["Very interesting", "I am not sure I understand you fully", "What does that suggest to you?", "Please continue", "Go on", "Do you feel strongly about discussing such things?"]
+      responses: ["?X - That seems interesting", "?X - I am not sure I understand you fully", "?X - What does that suggest to you?", "So ?X", "?X  - Do you feel strongly about discussing such things?"]
     },
   ])
 end
