@@ -47,9 +47,21 @@ class EquationSimplifier < RuleBasedTranslator
     def biexp_to_string(biexp)
       EquationParser.biexp_to_string(biexp)
     end
+
+    def expand_equations(equations)
+      hash = Hash.new
+      %w(x y n m s u v).each { |var| hash[var] = "?#{var.upcase}" }
+
+      equations.map do |eq|
+        biexp = string_to_biexp(eq)
+        biexp[0] = expand_rules(biexp[0])
+        biexp[2] = sublis(biexp[2], hash )
+        biexp
+      end
+    end
   end
 
-  @simplify_rules = [
+  @simplify_rules = expand_equations([
     "x + 0 = x",
     "0 + x = x",
     "x + x = 2 * x",
@@ -95,9 +107,6 @@ class EquationSimplifier < RuleBasedTranslator
     "log(x) + log(y) = log(x*y)",
     "log(x) - log(y) = log(x/y)",
     "(sin(x))^2 + (cos(x))^2 = 1",
-  ].map { |eq| expand_rules(string_to_biexp(eq)) } +
-  [ [["?X", "**", -1.0], "=", [1.0, "/", "?X"]] ] +
-  [
     "s * n = n * s",
     "n * (m * x) = (n * m) * x",
     "x * (n * y) = n * (x * y)",
@@ -119,30 +128,23 @@ class EquationSimplifier < RuleBasedTranslator
     "d(cos u)/dx = -(sin u) * (du/dx)",
     "d(e^u)/dx = (e^u) * (du/dx)",
     "du/dx = 0"
-  ].map do |eq|
-    biexp = string_to_biexp(eq)
-    biexp[0] = expand_rules(biexp[0])
-
-    hash = Hash.new
-    %w(x y n m s u v).each { |var| hash[var] = "?#{var.upcase}" }
-    biexp[2] = sublis(biexp[2], hash )
-
-    biexp
-  end
+  ]) + [ [["?X", "**", -1.0], "=", [1.0, "/", "?X"]] ]
 end
 
 
-p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
+# p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
 
-p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
+# p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
 
-p EquationSimplifier.simp("3 + x + 4 - x")
+# p EquationSimplifier.simp("3 + x + 4 - x")
 
-p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
+# p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
 
-p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
+# p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
 
-p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
+# p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
 
-p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
+# p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
+
+# p EquationSimplifier.simp("x ^ -1")
 
