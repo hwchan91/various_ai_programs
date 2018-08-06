@@ -53,15 +53,38 @@ class Factorize
     result
   end
 
+  # prerequisite: both numer and denom are arrays resulted from factorize
+  def self.divide_factors(numer, denoms)
+    result = Marshal.load(Marshal.dump(numer)) #deep clone
+    denoms.each do |denom|
+      factor = result.detect { |factor| factor.first == denom.first }
+      if factor
+        factor.push(factor.pop - denom.last)
+      else
+        result << [denom.first, '**', -denom.last]
+      end
+    end
+    result.map! { |factor| factor.last == 0 ? nil : factor }
+    result.compact
+  end
+
   def op(exp)
     exp[1]
   end
 end
 
-# exp = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x')
+# exp = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x / 3')
 # exp = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x * 0')
 # exp = EquationParser.string_to_biexp('x ^ 2 * x ^ 3 * y ^ 3 * sin x * 1')
 # exp = EquationParser.string_to_biexp('1')
 # p exp
 # p list = Factorize.new(exp: exp).process
 # p Factorize.unfactorize(list)
+
+# exp1 = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x')
+# numer = Factorize.new(exp: exp1).process
+
+# exp2 = EquationParser.string_to_biexp('x ^ 4 * y ^ 3 * 4')
+# denom = Factorize.new(exp: exp2).process
+
+# p Factorize.divide_factors(numer, denom)
