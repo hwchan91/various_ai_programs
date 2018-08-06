@@ -50,7 +50,7 @@ class EquationSimplifier < RuleBasedTranslator
 
     def expand_equations(equations)
       hash = Hash.new
-      %w(x y n m s u v).each { |var| hash[var] = "?#{var.upcase}" }
+      %w(x y z m s u v).each { |var| hash[var] = "?#{var.upcase}" }
 
       equations.map do |eq|
         biexp = string_to_biexp(eq)
