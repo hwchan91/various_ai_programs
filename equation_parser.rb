@@ -53,7 +53,7 @@ class EquationParser < RuleBasedTranslator
     end
 
     def check_if_biexp_valid?(biexp)
-      return false if biexp.is_a?(String)
+      return biexp if biexp.is_a?(Numeric) || biexp.is_a?(String)
       biexp.flatten.none?{|elem| elem == 'error'} &&
       biexp.flatten.any?{|elem| elem == '='}  == (biexp[1] == '=')# e.g. invalid: [ 5 * [3 = 2] ]
     end
