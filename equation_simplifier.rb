@@ -1,8 +1,11 @@
 require 'pry'
 require './equation_parser.rb'
 require './rule_based_translator.rb'
+require './integration.rb'
 
 class EquationSimplifier < RuleBasedTranslator
+  extend ::Integration
+
   class << self
     attr_accessor :simplify_rules
 
@@ -19,6 +22,8 @@ class EquationSimplifier < RuleBasedTranslator
 
     def simplify_exp(exp)
       case
+      when simplified_exp = simplify_by_fn(exp)
+        simplified_exp
       when simplified_exp = translate(input: exp,
                                       rules: simplify_rules,
                                       patterns_func: Proc.new { |lhs, _, rhs| [lhs] },
@@ -33,6 +38,20 @@ class EquationSimplifier < RuleBasedTranslator
       else
         exp
       end
+    end
+
+    def simplify_by_fn(exp)
+      fn = simp_fn[exp.first]
+      return unless fn
+      result = fn.call(exp)
+      return unless result
+      simplify(result)
+    end
+
+    def simp_fn
+      @simp_fn ||= {
+        'int' => Proc.new { |exp| integrate(exp[1], exp[2]) } # Int x y
+      }
     end
 
     def evaluable?(exp)
@@ -91,6 +110,7 @@ class EquationSimplifier < RuleBasedTranslator
     "x + -x = 0",
     "-x + x = 0",
     "x + y - x = y",
+    "x + (- y) = x - y",
     "log(1) = 0",
     "log(0) = undefined",
     "log(e) = 1",
@@ -148,4 +168,9 @@ end
 # p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
 
 # p EquationSimplifier.simp("x ^ -1")
+
+# p EquationSimplifier.simp("int (x * sin(x ^ 2)) dx")
+# p EquationSimplifier.simp("int (x^3 - 2*x + 5) dx")
+# binding.pry
+
 
