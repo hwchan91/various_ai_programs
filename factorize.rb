@@ -2,7 +2,7 @@ require './lisp_methods'
 require './equation_parser.rb'
 
 # prerequisite: exp deos not include any addition/substraction
-class Factorize
+class FactorizeService
   def initialize(opt = {})
     @factors  = []
     @constant = 1.0
@@ -43,7 +43,22 @@ class Factorize
     end
   end
 
-  def self.unfactorize(factors)
+  def op(exp)
+    return false unless exp.class == Array
+    exp[1]
+  end
+
+  def negative_exp?(exp)
+    exp.class == Array && exp.first == '-'
+  end
+end
+
+module Factorize
+  def factorize(exp)
+    FactorizeService.new(exp: exp).process
+  end
+
+  def unfactorize(factors)
     return 1.0 if factors.empty? #factors is empty only when the input is '1'
     result = nil
     factors.each do |factor|
@@ -53,7 +68,7 @@ class Factorize
   end
 
   # prerequisite: both numer and denom are arrays resulted from factorize
-  def self.divide_factors(numer, denoms)
+  def divide_factors(numer, denoms)
     result = Marshal.load(Marshal.dump(numer)) #deep clone
     denoms.each do |denom|
       factor = result.detect { |factor| factor.first == denom.first }
@@ -66,15 +81,6 @@ class Factorize
     result.map! { |factor| factor.last == 0 ? nil : factor }
     result.compact
   end
-
-  def op(exp)
-    return false unless exp.class == Array
-    exp[1]
-  end
-
-  def negative_exp?(exp)
-    exp.class == Array && exp.first == '-'
-  end
 end
 
 # exp = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x / 3')
@@ -83,14 +89,16 @@ end
 # exp = EquationParser.string_to_biexp('1')
 # exp = EquationParser.string_to_biexp('x * sin(x^ 2)')
 # p exp
-# p list = Factorize.new(exp: exp).process
-# p Factorize.unfactorize(list)
+
+# f = Class.new.extend(Factorize)
+# p list = f.factorize(exp)
+# p f.unfactorize(list)
 
 # exp1 = EquationParser.string_to_biexp('3 * x ^ 2 * x ^ 3 * 4 * y ^ 3 * 5 * sin x')
-# numer = Factorize.new(exp: exp1).process
+# numer = f.factorize(exp1)
 
 # exp2 = EquationParser.string_to_biexp('x ^ 4 * y ^ 3 * 4')
-# denom = Factorize.new(exp: exp2).process
+# denom = f.factorize(exp2)
 
-# p Factorize.divide_factors(numer, denom)
+# p f.divide_factors(numer, denom)
 

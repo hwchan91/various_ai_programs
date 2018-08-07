@@ -1,6 +1,8 @@
 require './factorize.rb'
 
 module Integration
+  include ::Factorize
+
   def integrate(exp, x)
     case
     when free_of_var?(exp, x) # int c dx = c*x
@@ -19,7 +21,7 @@ module Integration
                   when x_factors.detect { |factor| deriv_result = deriv_divides(factor, x_factors, x) }
                     deriv_result
                   else
-                    ['int?', Factorize.unfactorize(x_factors), x] # when cannot solve
+                    ['int?', unfactorize(x_factors), x] # when cannot solve
                   end
 
     simplify([unfactorize(const_factors), '*', int_result])
@@ -95,18 +97,6 @@ module Integration
 
   def deriv(y, x)
     simplify(['d', y, x])
-  end
-
-  def factorize(exp)
-    Factorize.new(exp: exp).process
-  end
-
-  def divide_factors(numer, denom)
-    Factorize.divide_factors(numer, denom)
-  end
-
-  def unfactorize(factors)
-    Factorize.unfactorize(factors)
   end
 
   def free_of_var?(exp, x)

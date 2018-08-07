@@ -171,6 +171,7 @@ end
 
 # p EquationSimplifier.simp("int (x * sin(x ^ 2)) dx")
 # p EquationSimplifier.simp("int (x^3 - 2*x + 5) dx")
+# p EquationSimplifier.simp("int ((sin(x)^2)*cos(x)) dx")
 # binding.pry
 
 
