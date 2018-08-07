@@ -50,7 +50,7 @@ class EquationSimplifier < RuleBasedTranslator
 
     def expand_equations(equations)
       hash = Hash.new
-      %w(x y z m s u v).each { |var| hash[var] = "?#{var.upcase}" }
+      %w(x y z m n s u v).each { |var| hash[var] = "?#{var.upcase}" }
 
       equations.map do |eq|
         biexp = string_to_biexp(eq)
@@ -115,6 +115,7 @@ class EquationSimplifier < RuleBasedTranslator
     "(x + m) + n = x + (n + m)",
     "x + (y + n) = (x + y) + n",
     "(x + n) + y = (x + y) + n",
+    "n * -x = (-n) * x",
     "dx/dx = 1",
     "d(u+v)/dx = (du/dx)+(dv/dx)",
     "d(u-v)/dx = (du/dx)+(dv/dx)",
