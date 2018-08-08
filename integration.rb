@@ -1,7 +1,7 @@
 require './factorize.rb'
 
 module Integration
-  include ::Factorize
+  include Factorize
 
   def integrate(exp, x)
     case
@@ -53,27 +53,27 @@ module Integration
     case
     when free_of_var?(k, x) # factors = k * u^n * du/dx; Int factors dx = k * Int u^n du
       if n == -1
-        [unfactorize(k), '*', ['log', u]]
+        [unfactorize(k), '*', ['ln', u]]
       else
         [[unfactorize(k), '*', [u, '**', n + 1]], '/', (n + 1)]
       end
-    when n == 1 && in_integral_table?(u)
+    when n == 1 && in_integral_table(u)
       k2 = divide_factors(factors, factorize([u, '*', deriv(u.last, x)]))
       if free_of_var?(k2, x)
-        [integrate_from_table(u.first, u.last), '*', unfactorize(k2)]
+        [integrate_from_table(u), '*', unfactorize(k2)]
       end
     end
   end
 
-  def in_integral_table?(exp)
+  def in_integral_table(exp)
     return unless exp.class == Array
-    integration_table[exp.first]
+    integration_table[exp[0..-2]]
   end
 
   def integration_table
     return @integration_table if @integration_table
     rules = expand_equations([
-      "Int log(x) dx  = x * log(x) - x",
+      "Int ln(x) dx  = x * ln(x) - x",
       "Int exp(x) dx  = exp(x)",
       "Int sin(x) dx  = -cos(x)",
       "Int cos(x) dx  = sin(x)",
@@ -81,18 +81,20 @@ module Integration
       "Int sinh(x) dx = cosh(x)",
       "Int cosh(x) dx = sinh(x)",
       "Int tanh(x) dx = log(cosh(x))",
+      "Int e^x dx = e^x",
     ])
 
     @integration_table = {}
     rules.each do |rule|
-      @integration_table[rule[0][1][0]] = rule
+      to_integrate = rule[0][1]
+      @integration_table[to_integrate[0..-2]] = rule
     end
     @integration_table
   end
 
-  def integrate_from_table(op, arg)
-    rule = integration_table[op]
-    replace_sym(rule.last, '?X', arg)
+  def integrate_from_table(exp)
+    rule = in_integral_table(exp)
+    replace_sym(rule.last, '?X', exp.last)
   end
 
   def deriv(y, x)

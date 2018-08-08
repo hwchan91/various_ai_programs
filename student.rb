@@ -2,7 +2,9 @@ require 'pry'
 require './rule_based_translator.rb'
 require './simple_equation_solver.rb'
 
-class Student < RuleBasedTranslator
+class Student
+  extend RuleBasedTranslator
+
   class << self
     attr_accessor :student_rules
 

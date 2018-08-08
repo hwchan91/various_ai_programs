@@ -1,6 +1,8 @@
 require './rule_based_translator.rb'
 
-class Eliza < RuleBasedTranslator
+class Eliza
+  extend RuleBasedTranslator
+
   class << self
     attr_accessor :eliza_rules
 

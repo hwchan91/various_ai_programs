@@ -1,8 +1,8 @@
 require './pattern_matcher.rb'
 require './lisp_methods.rb'
 
-class RuleBasedTranslator
-  extend ::LispMethods
+module RuleBasedTranslator
+  include LispMethods
 
   PAT_ABBREV = {
     "?X*" => %w(?* ?X),
@@ -19,7 +19,7 @@ class RuleBasedTranslator
     "s"   => %w(?= ?S !(?S.is_a?(Numeric))),
   }.freeze
 
-  class << self
+  # class << self
     def translate(input:,
                   rules:,
                   matcher_func: self.matcher_func,
@@ -64,6 +64,6 @@ class RuleBasedTranslator
       end
       rules
     end
-  end
+  # end
 end
 

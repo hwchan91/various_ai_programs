@@ -1,7 +1,9 @@
 require 'pry'
 require './rule_based_translator.rb'
 
-class EquationParser < RuleBasedTranslator
+class EquationParser
+  extend RuleBasedTranslator
+
   class << self
     attr_accessor :to_biexp_rules
 
