@@ -113,19 +113,23 @@ class EquationSimplifier < RuleBasedTranslator
     "x + (- y) = x - y",
     "log(1) = 0",
     "log(0) = undefined",
-    "log(e) = 1",
+    "ln(1) = 0",
+    "ln(0) = undefined",
+    "ln(e) = 1",
     "sin(0) = 0",
     "sin(pi) = -1",
     "cos(0) = 1",
     "cos(pi) = -1",
     "sin(pi/2) = 1",
     "cos(pi/2) = 0",
-    "log(e^x) = x",
-    "e^(log(x)) = x",
+    "ln(e^x) = x",
+    "e^(ln(x)) = x",
     "(x^y) * (x^z) = x^(y+z)",
     "(x^y) / (x^z) = x^(y-z)",
     "log(x) + log(y) = log(x*y)",
     "log(x) - log(y) = log(x/y)",
+    "ln(x) + ln(y) = ln(x*y)",
+    "ln(x) - ln(y) = ln(x/y)",
     "(sin(x))^2 + (cos(x))^2 = 1",
     "s * n = n * s",
     "n * (m * x) = (n * m) * x",
@@ -136,6 +140,7 @@ class EquationSimplifier < RuleBasedTranslator
     "x + (y + n) = (x + y) + n",
     "(x + n) + y = (x + y) + n",
     "n * -x = (-n) * x",
+    # Differentiation rules
     "dx/dx = 1",
     "d(u+v)/dx = (du/dx)+(dv/dx)",
     "d(u-v)/dx = (du/dx)+(dv/dx)",
@@ -143,35 +148,34 @@ class EquationSimplifier < RuleBasedTranslator
     "d(u*v)/dx = u*(dv/dx) + v*(du/dx)",
     "d(u/v)/dx = (v*(du/dx) - u*(dv/dx))/(v^2)",
     "d(u^n)/dx = n*u^(n-1) * (du/dx)",
-    "d(u^v)/dx = v*u^(v-1) * (du/dx) + u^v*(log u)*(dv/dx)",
-    "d(log u)/dx = (du/dx)/u",
+    "d(u^v)/dx = v*u^(v-1) * (du/dx) + u^v*(ln u)*(dv/dx)",
+    "d(ln u)/dx = (du/dx)/u",
     "d(sin u)/dx = (cos u) * (du/dx)",
     "d(cos u)/dx = -(sin u) * (du/dx)",
+    "d(tan u)/dx = ((sec u) ^ 2) * (du/dx)",
+    "d(cot u)/dx = -((csc u) ^ 2) * (du/dx)",
+    "d(sec u)/dx = ((sec u) * (tan u)) * (du/dx)",
+    "d(csc u)/dx = -((csc u) * (cot u)) * (du/dx)",
     "d(e^u)/dx = (e^u) * (du/dx)",
-    "du/dx = 0"
+    "du/dx = 0",
   ]) + [ [["?X", "**", -1.0], "=", [1.0, "/", "?X"]] ]
 end
 
 
 # p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
-
 # p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
-
 # p EquationSimplifier.simp("3 + x + 4 - x")
-
 # p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
+# p EquationSimplifier.simp("x ^ -1")
 
 # p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
-
 # p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
-
 # p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
-
-# p EquationSimplifier.simp("x ^ -1")
 
 # p EquationSimplifier.simp("int (x * sin(x ^ 2)) dx")
 # p EquationSimplifier.simp("int (x^3 - 2*x + 5) dx")
-# p EquationSimplifier.simp("int ((sin(x)^2)*cos(x)) dx")
-# binding.pry
+# p EquationSimplifier.simp("int(sin(2*x)) dx")
+# p EquationSimplifier.simp("int(e ^ (2*x)) dx")
+# p EquationSimplifier.simp("int(cos(x) * (sin(x)^3)) dx")
 
 
