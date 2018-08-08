@@ -43,10 +43,7 @@ module RuleBasedTranslator
     end
 
     def action_func
-      Proc.new do |response, variable_map|
-        variable_map.each { |variable, value| response.gsub!(variable, join_array(value)) }
-        response
-      end
+      Proc.new { |response, variable_map| sublis(response, variable_map) }
     end
 
     def join_array(arr)

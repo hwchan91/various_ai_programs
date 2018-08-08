@@ -163,20 +163,21 @@ class EquationSimplifier
 end
 
 
-p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
-p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
-p EquationSimplifier.simp("3 + x + 4 - x")
-p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
-p EquationSimplifier.simp("x ^ -1")
+# p EquationSimplifier.simp("2 * x * 3 * y* 4 * z * 5 * 6")
+# p EquationSimplifier.simp("3 * x * 4 *  (1/ x) * 5 * 6 * x * 2")
+# p EquationSimplifier.simp("3 + x + 4 - x")
+# p EquationSimplifier.simp( "x ^ 2 * x ^ 3" )
+# p EquationSimplifier.simp("x ^ -1")
 
-p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
-p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
-p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
+# p EquationSimplifier.simp("d((a*x^2 + b*x + c)/x)/dx")
+# p EquationSimplifier.simp("sin(2*x)^2 + cos(d(x^2)/dx)^2")
+# p EquationSimplifier.simp("sin(2*x) * sin(d(x^2)/dx) + cos(2*x) * cos(x * d(y*2)/dy)")
 
-p EquationSimplifier.simp("int (x * sin(x ^ 2)) dx")
-p EquationSimplifier.simp("int (x^3 - 2*x + 5) dx")
-p EquationSimplifier.simp("int(sin(2*x)) dx")
-p EquationSimplifier.simp("int(e ^ (2*x)) dx")
-p EquationSimplifier.simp("int(cos(x) * (sin(x)^3)) dx")
+# p EquationSimplifier.simp("int (x * sin(x ^ 2)) dx")
+# p EquationSimplifier.simp("int (x^3 - 2*x + 5) dx")
+# p EquationSimplifier.simp("int(sin(2*x)) dx")
+# p EquationSimplifier.simp("int(e ^ (2*x)) dx")
+# p EquationSimplifier.simp("int(5 ^ (2*x)) dx")
+# p EquationSimplifier.simp("int(cos(x) * (sin(x)^3)) dx")
 
 

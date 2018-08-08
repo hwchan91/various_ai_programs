@@ -57,22 +57,18 @@ module Integration
       else
         [[unfactorize(k), '*', [u, '**', n + 1]], '/', (n + 1)]
       end
-    when n == 1 && in_integral_table(u)
-      k2 = divide_factors(factors, factorize([u, '*', deriv(u.last, x)]))
+    when n == 1
+      result = integrate_from_table(u)
+      return unless result
+      k2 = divide_factors(factors, factorize([u, '*', deriv(u.last, x)])) # substitute f(x)*sin(g(x)) => sin(u) du/dx dx and make sure what is left matches the rule exactly
       if free_of_var?(k2, x)
-        [integrate_from_table(u), '*', unfactorize(k2)]
+        [result, '*', unfactorize(k2)]
       end
     end
   end
 
-  def in_integral_table(exp)
-    return unless exp.class == Array
-    integration_table[exp[0..-2]]
-  end
-
   def integration_table
-    return @integration_table if @integration_table
-    rules = expand_equations([
+    @integration_table ||= expand_equations([
       "Int ln(x) dx  = x * ln(x) - x",
       "Int exp(x) dx  = exp(x)",
       "Int sin(x) dx  = -cos(x)",
@@ -81,20 +77,16 @@ module Integration
       "Int sinh(x) dx = cosh(x)",
       "Int cosh(x) dx = sinh(x)",
       "Int tanh(x) dx = log(cosh(x))",
-      "Int e^x dx = e^x",
+      "Int (e^x) dx   = e^x",
+      "Int (n^x) dx   = (n^x)/(ln n)", # should also work with y^x where y is free of x
     ])
-
-    @integration_table = {}
-    rules.each do |rule|
-      to_integrate = rule[0][1]
-      @integration_table[to_integrate[0..-2]] = rule
-    end
-    @integration_table
   end
 
   def integrate_from_table(exp)
-    rule = in_integral_table(exp)
-    replace_sym(rule.last, '?X', exp.last)
+    translate(input: exp,
+              rules: integration_table,
+              patterns_func: Proc.new { |lhs, _, rhs| [lhs[1]] }, # extract f(x) from Int f(x) dx
+              response_func: Proc.new { |lhs, _, rhs| rhs })
   end
 
   def deriv(y, x)
