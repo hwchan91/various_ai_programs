@@ -112,6 +112,8 @@ class EquationSimplifier
     "-x + x = 0",
     "x + y - x = y",
     "x + (- y) = x - y",
+    "x - (- y) = x + y",
+    "x * (- y) = - (x * y)",
     "log(1) = 0",
     "log(0) = undefined",
     "ln(1) = 0",
@@ -159,7 +161,10 @@ class EquationSimplifier
     "d(csc u)/dx = -((csc u) * (cot u)) * (du/dx)",
     "d(e^u)/dx = (e^u) * (du/dx)",
     "du/dx = 0",
-  ]) + [ [["?X", "**", -1.0], "=", [1.0, "/", "?X"]] ]
+  ]) + [
+    [["?X", "**", -1.0], "=", [1.0, "/", "?X"]],
+    [[-1.0, '*', "?X"], '=', ['-', "?X"]],
+  ]
 end
 
 
@@ -179,5 +184,9 @@ end
 # p EquationSimplifier.simp("int(e ^ (2*x)) dx")
 # p EquationSimplifier.simp("int(5 ^ (2*x)) dx")
 # p EquationSimplifier.simp("int(cos(x) * (sin(x)^3)) dx")
+# p EquationSimplifier.simp("int(ln (x+ 3)) dx")
+# p EquationSimplifier.simp("int(x^3 * sin x) dx")
+
+
 
 

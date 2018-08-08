@@ -3,7 +3,7 @@ require './factorize.rb'
 module Integration
   include Factorize
 
-  def integrate(exp, x)
+  def integrate(exp, x, allow_by_parts: true)
     case
     when free_of_var?(exp, x) # int c dx = c*x
       return [exp, '*', x]
@@ -20,6 +20,8 @@ module Integration
                   when x_factors.empty? then x
                   when x_factors.detect { |factor| deriv_result = deriv_divides(factor, x_factors, x) }
                     deriv_result
+                  when allow_by_parts && parts_result = integrate_by_parts(x_factors, x)
+                    parts_result
                   else
                     ['int?', unfactorize(x_factors), x] # when cannot solve
                   end
@@ -91,6 +93,21 @@ module Integration
 
   def deriv(y, x)
     simplify(['d', y, x])
+  end
+
+  def integrate_by_parts(factors, x)
+    return unless factors.size == 2 # to keep things simple
+    pure_x_factors, non_pure_x_factors = partition_if(Proc.new { |var, _, power| var == x }, factors)
+
+    if pure_x_factors.size == 1 # this should be allowed to be recusive
+      pure_x_factor, non_pure_x_factor = pure_x_factors.first, non_pure_x_factors.first
+
+      non_pure_x_factor_integrated = integrate(non_pure_x_factor, x, allow_by_parts: false)
+      return if non_pure_x_factor_integrated.first == 'int?'
+      parts_integrate_result = integrate([deriv(pure_x_factor, x), '*', non_pure_x_factor_integrated], x)
+      return unless parts_integrate_result
+      [[pure_x_factor, '*', non_pure_x_factor_integrated], '-', parts_integrate_result]
+    end
   end
 
   def free_of_var?(exp, x)
