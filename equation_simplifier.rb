@@ -186,6 +186,10 @@ end
 # p EquationSimplifier.simp("int(cos(x) * (sin(x)^3)) dx")
 # p EquationSimplifier.simp("int(ln (x+ 3)) dx")
 # p EquationSimplifier.simp("int(x^3 * sin x) dx")
+# p EquationSimplifier.simp("int((ln x)^3) dx")
+# p EquationSimplifier.simp("int(cos x / ((1 + sin x) ^ 1)) dx")
+# p EquationSimplifier.simp("int(cos x / ((1 + sin x) ^ 2)) dx")
+# p EquationSimplifier.simp("int(x / (1 + x ^ 2)) dx")
 
 
 

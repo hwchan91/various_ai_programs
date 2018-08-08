@@ -11,6 +11,7 @@ class FactorizeService
 
   def process
     fac(@exp)
+    @factors.reject!{ |u, _, n| n == 0 }
     list_of_factors = case @constant
                       when 0 then [[0.0, '**', 1.0]]
                       when 1 then @factors

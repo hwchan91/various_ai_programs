@@ -1,5 +1,7 @@
 require './factorize.rb'
 
+# Can be improved: expansion of f(x)*g(x); int sin^ax*cos^bx dx through conversion to cos2x and expansion; int 1/(a^2 + x^2) dx => 1/a*tan^-1(x/a)
+
 module Integration
   include Factorize
 
@@ -96,18 +98,24 @@ module Integration
   end
 
   def integrate_by_parts(factors, x)
-    return unless factors.size == 2 # to keep things simple
-    pure_x_factors, non_pure_x_factors = partition_if(Proc.new { |var, _, power| var == x }, factors)
+    u, v = nil, nil
 
-    if pure_x_factors.size == 1 # this should be allowed to be recusive
-      pure_x_factor, non_pure_x_factor = pure_x_factors.first, non_pure_x_factors.first
-
-      non_pure_x_factor_integrated = integrate(non_pure_x_factor, x, allow_by_parts: false)
-      return if non_pure_x_factor_integrated.first == 'int?'
-      parts_integrate_result = integrate([deriv(pure_x_factor, x), '*', non_pure_x_factor_integrated], x)
-      return unless parts_integrate_result
-      [[pure_x_factor, '*', non_pure_x_factor_integrated], '-', parts_integrate_result]
+    case factors.size
+    when 1 # accept first-order_func^a, e.g. (ln x) ^ 2
+      u, v = factors.first, 1
+    when 2 # accept x^n*first-order-func
+      pure_x_factors, non_pure_x_factors = partition_if(Proc.new { |var, _, power| var == x }, factors)
+      if pure_x_factors.size == 1
+        u, v = pure_x_factors.first, non_pure_x_factors.first
+      end
     end
+
+    return unless u && v
+    v_integrated = integrate(v, x, allow_by_parts: false)
+    return unless free_of_var?(v_integrated, 'int?')
+    parts_integrate_result = integrate([deriv(u, x), '*', v_integrated], x)
+    return unless free_of_var?(parts_integrate_result, 'int?')
+    [[u, '*', v_integrated], '-', parts_integrate_result]
   end
 
   def free_of_var?(exp, x)
