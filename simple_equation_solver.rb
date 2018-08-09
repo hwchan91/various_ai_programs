@@ -110,26 +110,44 @@ class SimpleEquationSolver
       return known unless unknown
 
       answer = solve_arithmetic(isolate(equation, unknown))
+      known.push(answer)
       remaining_equations = equations - [equation]
-      subbed_remaining_equations = sublis(remaining_equations, {answer[0] => answer[2]} )
+      subbed_remaining_equations = replace_sym(remaining_equations, answer[0], answer[2])
 
 
       if remaining_equations && subbed_remaining_equations.none? { |equation| get_if_one_unknown(equation) }
         all_rem_vars = get_vars(subbed_remaining_equations).uniq
-        var_with_matched_words = all_rem_vars.map { |var| [var, num_of_matched_words(var, answer[0])] }
-                                             .reject { |var, num| num == 0 }
-                                             .sort_by { |var, num| num }.reverse
-                                             .map(&:first)
+        var_with_matched_words = get_var_with_matched_words(known, all_rem_vars)
 
         if var_with_matched_words.any?
-          var_with_matched_words.find do |var|
-            subbed_remaining_equations = sublis(subbed_remaining_equations, {var => answer[2]})
+          var_with_matched_words.find do |var, matched, count|
+            subbed_remaining_equations = replace_sym(subbed_remaining_equations, var, known.detect{ |var, _, value| var == matched }.last )
             subbed_remaining_equations.any? { |equation| get_if_one_unknown(equation) }
           end
         end
       end
 
-      solve(equations: subbed_remaining_equations, known: known.push(answer))
+      solve(equations: subbed_remaining_equations, known: known)
+    end
+
+    def get_var_with_matched_words(known, vars)
+      vars_matched = vars.map { |var| var_with_matched_and_count(known, var) }.compact
+      vars_matched.sort_by { |v, known, c| c }.reverse
+    end
+
+    def var_with_matched_and_count(known, var)
+      highest_count = 0
+      var_with_count = []
+
+      known.each do |known_var, _, value|
+        count = num_of_matched_words(var, known_var)
+        if count > highest_count
+          var_with_count = [known_var, count]
+          highest_count  = count
+        end
+      end
+
+      highest_count == 0 ? nil : [var] + var_with_count
     end
 
     def num_of_matched_words(test, subj)
