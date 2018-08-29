@@ -7,10 +7,6 @@ class TicTacToe
     @board   = (1..3).map{ Array.new(3) }
   end
 
-  def self.get_next_symbol(sym)
-    sym == 'X' ? 'O' : 'X'
-  end
-
   # return winning symbol or nil
   def self.get_winning_sym(board)
     winning_line = (rows(board) + columns(board) + diagonals(board)).detect do |line|
@@ -21,8 +17,11 @@ class TicTacToe
     winning_line.first
   end
 
-  def self.first_player_sym
-    'X'
+  def self.symbol_map
+    @@symbol_map ||= {
+      0 => 'X',
+      1 => 'O',
+    }
   end
 
   # returns array [1st player score, 2nd player score], or nil
@@ -31,7 +30,8 @@ class TicTacToe
 
     case
     when winning_sym
-      winning_sym == first_player_sym ? [1, -1] : [-1, 1]
+      winning_player_pos = symbol_map.key(winning_sym)
+      winning_player_pos == 1 ? [1, -1] : [-1 ,1]
     when all_filled?(board)
       [0, 0]
     else
@@ -82,23 +82,28 @@ class TicTacToe
   end
 
   def self.get_next_player_pos(curr_player_pos)
-    curr_player_pos == 0 ? 1 : 0
+    curr_player_pos == symbol_map.size - 1 ? 0 : curr_player_pos + 1
   end
 
-  def self.get_score_table(board, sym, curr_player_pos)
+  def self.get_best_move(board, curr_player_pos)
+    score_table = get_score_table(board, curr_player_pos)
+    move, _ = best_move_in_table(score_table, curr_player_pos)
+    move
+  end
+
+  def self.get_score_table(board, curr_player_pos)
     score_table = {}
     next_player_pos = get_next_player_pos(curr_player_pos)
 
-    successor_states(board, sym).each do |move, new_board|
+    successor_states(board, symbol_map[curr_player_pos]).each do |move, new_board|
       end_score = evaluate_board(new_board)
       if end_score
         score_table[move] = end_score
-        next
+      else
+        next_score_table = get_score_table(new_board, next_player_pos)
+        _, values = best_move_in_table(next_score_table, next_player_pos)
+        score_table[move] = values
       end
-
-      next_score_table = get_score_table(new_board, get_next_symbol(sym), next_player_pos)
-      _, values = best_move_in_table(next_score_table, next_player_pos)
-      score_table[move] = values
     end
 
     score_table
@@ -109,54 +114,42 @@ class TicTacToe
     pos_in_table_for_max_score = scores.index(scores.max)
     move, values = score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]
   end
-
-  def self.get_best_move(board, sym, curr_player_pos)
-    score_table = get_score_table(board, sym, curr_player_pos)
-    move, _ = best_move_in_table(score_table, curr_player_pos)
-    move
-  end
 end
-
-# board = [
-#   ['X', 'O', 'O'],
-#   ['X', 'O', 'X'],
-#   [nil, nil, nil]
-# ]
 
 board = [
   ['X', 'O', nil],
   [nil, nil, nil],
   [nil, nil, nil]
 ]
-TicTacToe.get_best_move(board, "X", 0)
+TicTacToe.get_best_move(board, 0)
 
 board = [
   ['X', 'O', nil],
   ['X', nil, nil],
   [nil, nil, nil]
 ]
-TicTacToe.get_best_move(board, "O", 1)
+TicTacToe.get_best_move(board, 1)
 
 board = [
   ['X', 'O', 'O'],
   ['X', nil, nil],
   [nil, nil, nil]
 ]
-TicTacToe.get_best_move(board, "X", 0)
+TicTacToe.get_best_move(board, 0)
 
 board = [
   ['X', 'O', 'O'],
   ['X', 'X', nil],
   [nil, nil, nil]
 ]
-TicTacToe.get_best_move(board, "O", 1)
+TicTacToe.get_best_move(board, 1)
 
 board = [
   ['X', 'O', 'O'],
   ['X', 'X', 'O'],
   [nil, nil, nil]
 ]
-TicTacToe.get_best_move(board, "X", 0)
+TicTacToe.get_best_move(board, 0)
 
 board = [
   ['X', 'O', 'O'],
