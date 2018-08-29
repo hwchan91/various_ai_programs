@@ -93,32 +93,45 @@ class TicTacToe
   end
 
   def self.get_best_move(board, curr_player_pos)
-    move, _ = best_move_in_table(board, curr_player_pos)
+    move, _, _ = best_move_in_table(board, curr_player_pos)
     move
   end
 
-  def self.best_move_in_table(board, player_pos)
-    score_table = get_score_table(board, player_pos)
+  def self.best_move_in_table(board, player_pos, alpha: -infinity, beta: infinity)
+    score_table = get_score_table(board, player_pos, alpha, beta)
     scores = score_table.values.map{ |v| v[player_pos] }
     pos_in_table_for_max_score = scores.index(scores.max)
     move, values = score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]
   end
 
-  def self.get_score_table(board, curr_player_pos)
+  def self.get_score_table(board, curr_player_pos, alpha, beta)
     score_table = {}
     next_player_pos = get_next_player_pos(curr_player_pos)
+    first_player_best = -infinity
 
     successor_states(board, symbol_map[curr_player_pos]).each do |move, new_board|
-      end_score = evaluate_board(new_board)
-      if end_score
-        score_table[move] = end_score
+      end_scores = evaluate_board(new_board)
+      unless end_scores
+        _, end_scores = best_move_in_table(new_board, next_player_pos, alpha: alpha, beta: beta)
+      end
+
+      first_player_best = [first_player_best, end_scores[0]].max
+      score_table[move] = end_scores
+
+      if curr_player_pos == 0
+        alpha = [alpha, first_player_best].max
+        break if first_player_best >= beta  # from the standpoint of the 2nd player, the best 2nd player can get (or the worst the 1st player can get) is worse than that of another successor state, thus no need to pursue
       else
-        _, values = best_move_in_table(new_board, next_player_pos)
-        score_table[move] = values
+        beta = [beta, first_player_best].min
+        break if first_player_best <= alpha # from the standpoint of the 1st player, the best 1st player can get is worse than that of another successors state, thus no need to pursue
       end
     end
 
     score_table
+  end
+
+  def self.infinity
+    1.0/0
   end
 end
 
