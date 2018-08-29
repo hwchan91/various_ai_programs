@@ -93,9 +93,15 @@ class TicTacToe
   end
 
   def self.get_best_move(board, curr_player_pos)
-    score_table = get_score_table(board, curr_player_pos)
-    move, _ = best_move_in_table(score_table, curr_player_pos)
+    move, _ = best_move_in_table(board, curr_player_pos)
     move
+  end
+
+  def self.best_move_in_table(board, player_pos)
+    score_table = get_score_table(board, player_pos)
+    scores = score_table.values.map{ |v| v[player_pos] }
+    pos_in_table_for_max_score = scores.index(scores.max)
+    move, values = score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]
   end
 
   def self.get_score_table(board, curr_player_pos)
@@ -107,19 +113,12 @@ class TicTacToe
       if end_score
         score_table[move] = end_score
       else
-        next_score_table = get_score_table(new_board, next_player_pos)
-        _, values = best_move_in_table(next_score_table, next_player_pos)
+        _, values = best_move_in_table(new_board, next_player_pos)
         score_table[move] = values
       end
     end
 
     score_table
-  end
-
-  def self.best_move_in_table(score_table, player_pos)
-    scores = score_table.values.map{ |v| v[player_pos] }
-    pos_in_table_for_max_score = scores.index(scores.max)
-    move, values = score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]
   end
 end
 
