@@ -98,10 +98,15 @@ class TicTacToe
   end
 
   def self.best_move_in_table(board, player_pos, alpha: -infinity, beta: infinity)
+    cached_result = cache[get_key(board, player_pos)]
+    return cached_result if cached_result
+
     score_table = get_score_table(board, player_pos, alpha, beta)
     scores = score_table.values.map{ |v| v[player_pos] }
     pos_in_table_for_max_score = scores.index(scores.max)
-    move, values = score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]
+    best_move_and_values = [score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]]
+    add_to_cache(board, player_pos, best_move_and_values)
+    best_move_and_values
   end
 
   def self.get_score_table(board, curr_player_pos, alpha, beta)
@@ -133,8 +138,57 @@ class TicTacToe
   def self.infinity
     1.0/0
   end
-end
 
+  def self.cache
+    @@cache ||= {}
+  end
+
+  def self.get_key(board, player_pos)
+    board.flatten.map{|sym| sym.nil? ? "." : sym}.join + player_pos.to_s # e.g.  X..O..XXO1
+  end
+
+  def self.add_to_cache(board, player_pos, best_move_and_values)
+    best_move, values = best_move_and_values
+    rotated_boards = get_rotated_boards(board, best_move)
+    mirrored_boards = get_mirrored_boards_in_bulk(rotated_boards)
+
+    (rotated_boards + mirrored_boards).each do |board, move|
+      @@cache[get_key(board, player_pos)] = [move, values]
+    end
+  end
+
+  def self.get_rotated_boards(board, move)
+    rotated_boards = [[board, move]]
+    3.times do
+      board = rotated_board(board)
+      move  = rotated_move(move)
+      rotated_boards << [board, move]
+    end
+    rotated_boards
+  end
+
+  def self.rotated_board(board)
+    columns(board).map(&:reverse)
+  end
+
+  def self.rotated_move(move)
+    [move[1], 2 - move[0]]
+  end
+
+  def self.get_mirrored_boards_in_bulk(boards)
+    boards.map do |board, move|
+      [mirrored_board(board), mirrored_move(move)]
+    end
+  end
+
+  def self.mirrored_board(board)
+    board.map(&:reverse)
+  end
+
+  def self.mirrored_move(move)
+    [move[0], 2 - move[1]]
+  end
+end
 
 # board = [
 #   [nil, nil, nil],
