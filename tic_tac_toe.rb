@@ -26,12 +26,15 @@ class TicTacToe
 
   # returns array [1st player score, 2nd player score], or nil
   def self.evaluate_board(board)
+    depth = filled_boxes_count(board)
     winning_sym = get_winning_sym(board)
 
     case
     when winning_sym
-      winning_player_pos = symbol_map.key(winning_sym)
-      winning_player_pos == 1 ? [1, -1] : [-1 ,1]
+      score = 10 - depth
+      scores = [score, -score]
+      scores.reverse! if symbol_map.key(winning_sym) == 1
+      scores
     when all_filled?(board)
       [0, 0]
     else
@@ -39,8 +42,12 @@ class TicTacToe
     end
   end
 
+  def self.filled_boxes_count(board)
+    board.flatten.count { |box| box }
+  end
+
   def self.all_filled?(board)
-    board.flatten.all? { |box| box }
+    filled_boxes_count(board) == 9
   end
 
   def self.rows(board)
@@ -116,43 +123,45 @@ class TicTacToe
   end
 end
 
-board = [
-  ['X', 'O', nil],
-  [nil, nil, nil],
-  [nil, nil, nil]
-]
-TicTacToe.get_best_move(board, 0)
 
-board = [
-  ['X', 'O', nil],
-  ['X', nil, nil],
-  [nil, nil, nil]
-]
-TicTacToe.get_best_move(board, 1)
+# board = [
+#   [nil, nil, nil],
+#   [nil, nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 0) # => [0,0]
 
-board = [
-  ['X', 'O', 'O'],
-  ['X', nil, nil],
-  [nil, nil, nil]
-]
-TicTacToe.get_best_move(board, 0)
+# board = [
+#   ['X', nil, nil],
+#   [nil, nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 1) # => [1,1]
 
-board = [
-  ['X', 'O', 'O'],
-  ['X', 'X', nil],
-  [nil, nil, nil]
-]
-TicTacToe.get_best_move(board, 1)
+# board = [
+#   ['X', 'O', nil],
+#   [nil, nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 0)
 
-board = [
-  ['X', 'O', 'O'],
-  ['X', 'X', 'O'],
-  [nil, nil, nil]
-]
-TicTacToe.get_best_move(board, 0)
+# board = [
+#   ['X', 'O', nil],
+#   ['X', nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 1)
 
-board = [
-  ['X', 'O', 'O'],
-  ['X', 'X', 'O'],
-  ['X', nil, nil]
-]
+# board = [
+#   ['X', 'O', nil],
+#   ['X', nil, nil],
+#   ['O', nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 0)
+
+# board = [
+#   ['X', 'O', nil],
+#   ['X', 'X', nil],
+#   ['O', nil, nil]
+# ]
+# TicTacToe.get_best_move(board, 1) # => returns [0,2] which does not block any X lines, because even if O blocks it, X is still going to win in the next move, thefore all moves evaluate to the same score
