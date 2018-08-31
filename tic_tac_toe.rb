@@ -2,14 +2,17 @@ require 'pry'
 
 class TicTacToe
   attr_accessor :board, :curr_sym
+  POS_BOARD = [[[0, 0], [0, 1], [0, 2]], [[1, 0], [1, 1], [1, 2]], [[2, 0], [2, 1], [2, 2]]]
+  TOP_LEFT_DIAGONAL = [[0,0], [1,1], [2,2]]
+  TOP_RIGHT_DIAGONAL = [[0,2], [1,1], [2,0]]
 
   def initialize
     @board   = (1..3).map{ Array.new(3) }
   end
 
   # return winning symbol or nil
-  def self.get_winning_sym(board)
-    winning_line = (rows(board) + columns(board) + diagonals(board)).detect do |line|
+  def self.won?(board)
+    winning_line = all_lines(board).detect do |line|
       sym = line.first
       line.all? { |box| box && box == sym }
     end
@@ -24,22 +27,72 @@ class TicTacToe
     }
   end
 
-  # returns array [1st player score, 2nd player score], or nil
-  def self.evaluate_board(board)
-    depth = filled_boxes_count(board)
-    winning_sym = get_winning_sym(board)
+  def self.evaluate_board(board, curr_sym, limit_depth = 9)
+    move_count = filled_boxes_count(board)
 
     case
-    when winning_sym
-      score = 10 - depth
-      scores = [score, -score]
-      scores.reverse! if symbol_map.key(winning_sym) == 1
-      scores
-    when all_filled?(board)
-      [0, 0]
+    when won?(board)
+      get_values_given_move_count(move_count, curr_sym)
+    when move_count.between?(3, 4) && win_after_four_moves?(board, curr_sym)
+      get_values_given_move_count(move_count + 4, curr_sym)
+    when limit_depth <= 0
+      [0, 0]  #assuming tie if cannot guarantee win after limit_depth
     else
       nil
     end
+  end
+
+  def self.win_after_four_moves?(board, curr_sym)
+    curr_sym_pos = get_sym_pos(board, curr_sym)
+    opponent_sym_pos = get_sym_pos(board, get_opposite_sym(curr_sym))
+
+    curr_calling_on = calling_on(curr_sym_pos, opponent_sym_pos)
+    return false if !curr_calling_on || calling_on(opponent_sym_pos, curr_sym_pos)
+
+    !pos_on_opponent_occupied_lines(curr_calling_on, opponent_sym_pos)
+  end
+
+  def self.pos_on_opponent_occupied_lines(pos, opponent_sym_pos)
+    occupied_rows(opponent_sym_pos).include?(pos.first) ||
+    occupied_columns(opponent_sym_pos).include?(pos.last) ||
+    occupied_diagonals(opponent_sym_pos).include?(occupied_diagonals([pos]).first)
+  end
+
+  def self.calling_on(curr_sym_pos, opponent_sym_pos)
+    return if curr_sym_pos.size < 2
+    all_lines(POS_BOARD).each do |line|
+      remaining_tiles = line - curr_sym_pos
+      return remaining_tiles.first if remaining_tiles.size == 1 && !opponent_sym_pos.include?(remaining_tiles.first)
+    end
+    nil
+  end
+
+  def self.get_sym_pos(board, sym)
+    board = board.flatten
+    POS_BOARD.flatten(1).map.with_index{ |pos, i| board[i] == sym ? pos : nil }.compact
+  end
+
+  def self.occupied_rows(sym_pos)
+    sym_pos.map(&:first).uniq
+  end
+
+  def self.occupied_columns(sym_pos)
+    sym_pos.map(&:last).uniq
+  end
+
+  # the 2 diagonals are given number 0 & 1
+  def self.occupied_diagonals(sym_pos)
+    arr = []
+    arr << 0 if (TOP_LEFT_DIAGONAL - sym_pos).size < 3
+    arr << 1 if (TOP_RIGHT_DIAGONAL - sym_pos).size < 3
+    arr
+  end
+
+  def self.get_values_given_move_count(move_count, winning_sym)
+    score = 10 - move_count
+    scores = [score, -score]
+    scores.reverse! if symbol_map.key(winning_sym) == 1
+    scores
   end
 
   def self.filled_boxes_count(board)
@@ -48,6 +101,10 @@ class TicTacToe
 
   def self.all_filled?(board)
     filled_boxes_count(board) == 9
+  end
+
+  def self.all_lines(board)
+    rows(board) + columns(board) + diagonals(board)
   end
 
   def self.rows(board)
@@ -92,16 +149,20 @@ class TicTacToe
     curr_player_pos == symbol_map.size - 1 ? 0 : curr_player_pos + 1
   end
 
+  def self.get_opposite_sym(sym)
+    sym == 'X' ? 'O' : 'X'
+  end
+
   def self.get_best_move(board, curr_player_pos)
     move, _, _ = best_move_in_table(board, curr_player_pos)
     move
   end
 
-  def self.best_move_in_table(board, player_pos, alpha: -infinity, beta: infinity)
+  def self.best_move_in_table(board, player_pos, alpha: -infinity, beta: infinity, limit_depth: 3)
     cached_result = cache[get_key(board, player_pos)]
     return cached_result if cached_result
 
-    score_table = get_score_table(board, player_pos, alpha, beta)
+    score_table = get_score_table(board, player_pos, alpha, beta, limit_depth)
     scores = score_table.values.map{ |v| v[player_pos] }
     pos_in_table_for_max_score = scores.index(scores.max)
     best_move_and_values = [score_table.keys[pos_in_table_for_max_score], score_table.values[pos_in_table_for_max_score]]
@@ -109,15 +170,17 @@ class TicTacToe
     best_move_and_values
   end
 
-  def self.get_score_table(board, curr_player_pos, alpha, beta)
-    score_table = {}
-    next_player_pos = get_next_player_pos(curr_player_pos)
+  def self.get_score_table(board, curr_player_pos, alpha, beta, limit_depth)
+    score_table       = {}
+    next_player_pos   = get_next_player_pos(curr_player_pos)
     first_player_best = -infinity
+    curr_sym          = symbol_map[curr_player_pos]
+    limit_depth      -= 1
 
-    successor_states(board, symbol_map[curr_player_pos]).each do |move, new_board|
-      end_scores = evaluate_board(new_board)
+    successor_states(board, curr_sym).each do |move, new_board|
+      end_scores = evaluate_board(new_board, curr_sym, limit_depth)
       unless end_scores
-        _, end_scores = best_move_in_table(new_board, next_player_pos, alpha: alpha, beta: beta)
+        _, end_scores = best_move_in_table(new_board, next_player_pos, alpha: alpha, beta: beta, limit_depth: limit_depth)
       end
 
       first_player_best = [first_player_best, end_scores[0]].max
@@ -195,7 +258,7 @@ end
 #   [nil, nil, nil],
 #   [nil, nil, nil]
 # ]
-# TicTacToe.get_best_move(board, 0) # => [0,0]
+# TicTacToe.get_best_move(board, 0) # => [0,0]/[1,1] since there is no guarantee win, and it's not calculating the percentage of wins, it wouldn't suggest taking the corner even if it's more likely to win
 
 # board = [
 #   ['X', nil, nil],
@@ -231,3 +294,27 @@ end
 #   ['O', nil, nil]
 # ]
 # TicTacToe.get_best_move(board, 1) # => returns [0,2] which does not block any X lines, because even if O blocks it, X is still going to win in the next move, thefore all moves evaluate to the same score
+
+
+# board = [
+#   ['O', 'X', 'X'],
+#   [nil, nil, nil],
+#   ['O', nil, nil]
+# ]
+# TicTacToe.win_after_four_moves?(board, 'O')
+
+
+
+# board = [
+#   ['O', 'X', 'X'],
+#   ['O', nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.win_after_four_moves?(board, 'O')
+
+# board = [
+#   ['X', 'X', nil],
+#   ['O', nil, nil],
+#   [nil, nil, nil]
+# ]
+# TicTacToe.win_after_four_moves?(board, 'X')
