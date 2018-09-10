@@ -12,7 +12,7 @@ class Tile
 end
 
 class EightQueens
-  PREFERRED_STRATEGY = 'first_choice_move'
+  PREFERRED_STRATEGY = 'stochastic_move' #'greedy_move' #'first_choice_move'
 
   def self.tiles_attacked_by_pos(origin)
     coords = []
@@ -67,6 +67,11 @@ class EightQueens
     nil
   end
 
+  def self.stochastic_move(queens)
+    current_score = queens_attacked_count(queens)
+    successor_states(queens).select{ |successor| successor.last < current_score }.sample
+  end
+
   def self.solve(queens)
     new_queens, new_score = send(PREFERRED_STRATEGY, queens)
     return if new_queens.nil?
@@ -86,8 +91,14 @@ class EightQueens
     (0..7).map{|i| Tile.new([i, rand(8)])}
   end
 
-  def self.get_sol
-    solve(rand_queens) || get_sol
+  def self.get_sol(tries = 1)
+    sol = solve(rand_queens)
+    if sol
+      puts("total tries: #{tries}")
+      return sol
+    end
+
+    get_sol(tries += 1)
   end
 end
 
