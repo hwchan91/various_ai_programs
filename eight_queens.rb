@@ -12,7 +12,7 @@ class Tile
 end
 
 class EightQueens
-  PREFERRED_STRATEGY = 'greedy_move'
+  PREFERRED_STRATEGY = 'first_choice_move'
 
   def self.tiles_attacked_by_pos(origin)
     coords = []
@@ -50,6 +50,21 @@ class EightQueens
     best_score = successors.map(&:last).min
     return if best_score >= current_count
     successors.find{ |successor| successor.last == best_score }
+  end
+
+  def self.first_choice_move(queens)
+    current_count = queens_attacked_count(queens)
+
+    queens.each do |queen|
+      other_queens = queens - [queen]
+      (0..7).each do |i|
+        next if queen.column == i
+        new_queens = other_queens + [Tile.new([queen.row, i])]
+        new_count = queens_attacked_count(new_queens)
+        return [new_queens, new_count] if new_count < current_count
+      end
+    end
+    nil
   end
 
   def self.solve(queens)
