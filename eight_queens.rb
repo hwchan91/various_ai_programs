@@ -12,6 +12,8 @@ class Tile
 end
 
 class EightQueens
+  PREFERRED_STRATEGY = 'greedy_move'
+
   def self.tiles_attacked_by_pos(origin)
     coords = []
     8.times { |i| coords += [[origin.row, i], [i, origin.column]] }
@@ -25,8 +27,7 @@ class EightQueens
   end
 
   def self.queens_attacked_count(queens)
-    count_both_sides = queens.inject(0) { |count, queen| count + queens_attacked_count_by_pos(queen, queens) }
-    count_both_sides / 2
+    queens.inject(0) { |count, queen| count + queens_attacked_count_by_pos(queen, queens) } / 2
   end
 
   def self.successor_states(queens)
@@ -43,7 +44,7 @@ class EightQueens
     successors
   end
 
-  def self.move(queens)
+  def self.greedy_move(queens)
     current_count = queens_attacked_count(queens)
     successors = successor_states(queens)
     best_score = successors.map(&:last).min
@@ -52,32 +53,30 @@ class EightQueens
   end
 
   def self.solve(queens)
-    new_queens, new_score = move(queens)
+    new_queens, new_score = send(PREFERRED_STRATEGY, queens)
     return if new_queens.nil?
     return new_queens if new_score == 0
     solve(new_queens)
   end
 
   def self.print_board(queens)
-    coords = queens.map(&:coord)
-    board = []
-    8.times do |i|
-      row = []
-      8.times do |j|
-        tile = coords.include?([i, j]) ? ' Q ' : '   '
-        row << tile
-      end
-      board << row
-    end
-
     puts "---------------------------------"
-    board.each do |row|
-      puts ("|" + row.map{ |col| "#{col}|" }.join)
+    queens.sort_by{ |q| q.row }.each do |queen|
+      puts ("|" + (0..7).map{ |col| col == queen.column ? ' Q |' : '   |' }.join)
       puts "---------------------------------"
     end
   end
+
+  def self.rand_queens
+    (0..7).map{|i| Tile.new([i, rand(8)])}
+  end
+
+  def self.get_sol
+    solve(rand_queens) || get_sol
+  end
 end
 
-queens = [ [0,2], [1,3], [2,1], [3,7], [4,6], [5,5], [6,2], [7,1] ].map{|pos| Tile.new(pos) }
-sol = EightQueens.solve(queens)
-EightQueens.print_board(sol)
+# queens = [ [0,2], [1,3], [2,1], [3,7], [4,6], [5,5], [6,2], [7,1] ].map{|pos| Tile.new(pos) }
+# sol = EightQueens.solve(queens)
+# EightQueens.print_board(sol)
+EightQueens.print_board EightQueens.get_sol
