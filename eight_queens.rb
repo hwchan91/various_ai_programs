@@ -13,7 +13,9 @@ end
 
 class EightQueens
   BASE_ANNEALING_TEMP = 1
-  PREFERRED_STRATEGY = 'annealing_move' #'first_choice_move' #'stochastic_move' #'greedy_move' #'first_choice_move'
+  ANNEALING_MULTIPLICATOR = 0.97
+  ANNEALING_TEMP_LIMIT = 0.5
+  PREFERRED_STRATEGY = 'annealing_move' #'first_choice_move' #'greedy_move'
 
   def self.tiles_attacked_by_pos(origin)
     coords = []
@@ -68,11 +70,6 @@ class EightQueens
     nil
   end
 
-  def self.stochastic_move(queens)
-    current_score = queens_attacked_count(queens)
-    successor_states(queens).select{ |successor| successor.last < current_score }.sample
-  end
-
   def self.solve(queens)
     new_queens, new_score = send(PREFERRED_STRATEGY, queens)
     return if new_queens.nil?
@@ -108,7 +105,7 @@ class EightQueens
     new_queens = random_move(queens)
     new_score = queens_attacked_count(new_queens)
     if new_score < current_score || rand((28 - current_score)/@temp) == 0 # as state approaches sol, less likely to accept move
-      @temp = @temp * 0.95 unless @temp < 0.3
+      @temp = @temp * ANNEALING_MULTIPLICATOR unless @temp < ANNEALING_TEMP_LIMIT
       return [new_queens, new_score]
     end
     annealing_move(queens) # else get another random move
