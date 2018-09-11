@@ -12,7 +12,8 @@ class Tile
 end
 
 class EightQueens
-  PREFERRED_STRATEGY = 'stochastic_move' #'greedy_move' #'first_choice_move'
+  BASE_ANNEALING_TEMP = 1
+  PREFERRED_STRATEGY = 'annealing_move' #'first_choice_move' #'stochastic_move' #'greedy_move' #'first_choice_move'
 
   def self.tiles_attacked_by_pos(origin)
     coords = []
@@ -92,6 +93,7 @@ class EightQueens
   end
 
   def self.get_sol(tries = 1)
+    reset_annealing_temp
     sol = solve(rand_queens)
     if sol
       puts("total tries: #{tries}")
@@ -100,9 +102,37 @@ class EightQueens
 
     get_sol(tries += 1)
   end
+
+  def self.annealing_move(queens)
+    current_score = queens_attacked_count(queens)
+    new_queens = random_move(queens)
+    new_score = queens_attacked_count(new_queens)
+    if new_score < current_score || rand((28 - current_score)/@temp) == 0 # as state approaches sol, less likely to accept move
+      @temp = @temp * 0.95 unless @temp < 0.3
+      return [new_queens, new_score]
+    end
+    annealing_move(queens) # else get another random move
+  end
+
+  def self.reset_annealing_temp
+    @temp = BASE_ANNEALING_TEMP
+  end
+
+  def self.random_move(queens)
+    moved_queen  = queens.sample
+    new_queen = Tile.new([moved_queen.row, get_rand_column_except(moved_queen.column)])
+    queens - [moved_queen] + [new_queen]
+  end
+
+  def self.get_rand_column_except(i)
+    col = rand(8)
+    col == i ? get_rand_column_except(i) : col
+  end
 end
 
 # queens = [ [0,2], [1,3], [2,1], [3,7], [4,6], [5,5], [6,2], [7,1] ].map{|pos| Tile.new(pos) }
 # sol = EightQueens.solve(queens)
 # EightQueens.print_board(sol)
+time = Time.now
 EightQueens.print_board EightQueens.get_sol
+p Time.now - time
